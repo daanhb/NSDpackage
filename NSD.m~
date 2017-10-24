@@ -1,11 +1,12 @@
 function [ X, W ] = NSD( a,b,N,g,singularities )
     %generic Numerical steepest descent routine
-    %singularities are all along the real line, and specified by the user
+    %singularities are all along the real line, and specified by the user,
+    %input in vector form
     if nargin<5
         error('Cant automatically determine inverse / derivatives / singularities of phase function yet')    
     end
     
-    %check for singularities in (real) interior of integration range:
+    %check for singularities in interior:
     interiorSingularities=[];
     for s=singularities
        if  a<s.position && s.position<b
@@ -13,14 +14,10 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
        end
     end
     
-    if ~isequal([],interiorSingularities) 
-        %singularities in interior, so let's make like a banana and split
+    if ~isequal([],interiorSingularities)
         intervalSplit=[a interiorSingularities b];
-        X=[]; W=[];
-        for j=1:(length(intervalSplit)-1)
-            %call self recursively, without interior singularities:
-            [ X_, W_ ] = NSD( intervalSplit(j),intervalSplit(j+1),N,g,singularities );
-            X=[X; X_;]; W=[W; W_;];
+        for j=1:(length()-1)
+            NSD( a,b,N,g,singularities )
         end
     else
 
