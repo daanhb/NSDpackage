@@ -10,8 +10,8 @@ function err = GenericTestCode( f,g, trueValue, Npts, fSingBit, a, b )
         a=-1;   b=1;
     end
     %add the quadrature paths
-    addpath ../hoipack/quadrules;
-    addpath ../hoipack/OPQ;
+    addpath ../../hoipack/quadrules;
+    addpath ../../hoipack/OPQ;
 
     %oscillator(dim,freq,  eval,   deriv, inverse, derivOfInverse, stationaryPoints, orders)
     [ x, w ] = NSD( a, b, Npts, g, fSingBit);

@@ -51,19 +51,14 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
                     %function is invertible, so can define SD paths
                     %can write the derivative of the inverse of g using that a-level trick
                     %that I forgot about
-                    %DerivOfInverseOf_g=@(x) 1./(g.inverse{branch}(g.deriv(x)));
-                    %DerivOfInverseOf_g=@(x) 1./(g.deriv(g.inverse{branch}(x)));
                     DerivOfInverseOf_g=@(x) g.derivOfInverse{branch}(x);
-%                     dh_dp{path}=@(p) 1i*DerivOfInverseOf_g(g.eval(realPoints(path))+1i.*p.^pathPowers(path));
 
             else
                 h{SDpath}=@(p) g.inverse(g.eval(realPoints(SDpath))+1i*p.^pathPowers(SDpath));
                 DerivOfInverseOf_g=@(x) 1./(g.inverse(g.deriv(x)));
-%                     dh_dp{path}=@(p) 1i*DerivOfInverseOf_g(g.eval(realPoints(path))+1i.*p.^pathPowers(path));
             end
             
             if pathPowers(SDpath)==1 %non degenerate stationary point or endpoint integral
-                %DerivOfInverseOf_g=@(x) 1./(g.inverse(g.deriv(x)));
                 dh_dp{SDpath}=@(p) 1i*DerivOfInverseOf_g(g.eval(realPoints(SDpath))+1i.*p.^pathPowers(SDpath));
             else
                 %derivative should be constant, so approximate derivative
@@ -80,23 +75,14 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
             end
             % get weights and nodes for path.
             [x{SDpath}, w{SDpath}]=pathQuad( 0, inf, pathPowers(SDpath), COVsingularities, N );
-            %[x{SDpath}, w{SDpath}]=pathQuad( 0, inf, max(pathPowers), COVsingularities, N );
             %now append weights and nodes to the rest, noting that we subtract every even path, as these are coming back down from
             %infinity
-            %if pathPowers(path) == 1 %i.e. EITHER (i) non-degenerate stationary point or (ii) endpoint integral
             W_{SDpath}=((-1)^(SDpath+1)/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*g.eval(realPoints(SDpath))).*dh_dp{SDpath}(x{SDpath}./(freq^(1/pathPowers(SDpath)))).*w{SDpath};
             X_{SDpath}=h{SDpath}(x{SDpath}./freq^(1/pathPowers(SDpath)));  
-%             else
-%                 W=[W; ((-1)^(path+1)/(freq^(1/pathPowers(path)))).*w{path};];
-%                 X=[X; h{path}(x{path}./freq^(1/pathPowers(path)));];                
-%             end
-            %nodes
-
         end
     X=[];   W=[];
     for SDpath=1:numPaths
         W=[W; W_{SDpath}];
         X=[X; X_{SDpath};];          
     end
-%plot(X,'x');
 end
