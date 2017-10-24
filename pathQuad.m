@@ -35,17 +35,15 @@ p_max=10;   GradDelta=.15;
                     %now scale the graded weights and nodes from [0 1] to [0 pathSplit]
                     x1=x1*pathSplit; w1=w1*pathSplit.*exp(-x1);
                     %now do Gauss Laguerre on [pathSplit \infty]
-                    %[x2, w2] = GaussLaguerre(N, 0);
                     [x2, w2] = quad_gauss_exp(m, N);
                     x2=x2+pathSplit; w2=w2*exp(-pathSplit^m);
                     %combine all weights and nodes for first SD path
                     x=[x1; x2;]; w=[w1; w2];
                 else    %not even nearly singular
-                    %[x, w] = GaussLaguerre(N, 0);
                     [x, w] = quad_gauss_exp(m, N);
                 end
             else
-                error('Havent coded for functions with multiple singularities yet');
+                error('Have only coded for functions with single singularities');
             end
         end
     end

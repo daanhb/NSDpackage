@@ -1,6 +1,8 @@
 function [ X, W ] = NSD( a,b,N,g,singularities )
     %generic Numerical steepest descent routine
     %singularities are all along the real line, and specified by the user
+    
+    %CANNOT YET HANDLE STATIONARY POINTS AT ENDPOINTS OF INTEGRAL
     if nargin<5
         error('Cant automatically determine inverse / derivatives / singularities of phase function yet')    
     end
