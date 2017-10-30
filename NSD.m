@@ -2,6 +2,11 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
     %generic Numerical steepest descent routine
     %singularities are all along the real line, and specified by the user
     
+    %error in comparing limits of arguemnt of paths at infinity
+    errTol=1E-14;
+
+    nCauchy=15;
+        
     %CANNOT YET HANDLE STATIONARY POINTS AT ENDPOINTS OF INTEGRAL
     if nargin<5
         error('Cant automatically determine inverse / derivatives / singularities of phase function yet')    
@@ -28,8 +33,6 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
 
         %get frequency
         freq=g.freq;
-        %error in comparing limits of arguemnt of paths at infinity
-        errTol=1E-14;
 
         %determine the number of steepest descent paths
         numPaths=2*length(g.stationaryPoints)+2;
@@ -79,16 +82,6 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
                     DerivOfInverseOf_g=@(x) 1./(g.inverse(g.deriv(x)));
                 end
 
-                if pathPowers(SDpath)==1 %non degenerate stationary point or endpoint integral
-                    dh_dp{SDpath}=@(p) 1i*DerivOfInverseOf_g(g.eval(realPoints(SDpath))+1i.*p.^pathPowers(SDpath));
-                else
-                    %derivative should be constant, so approximate derivative
-                    %will be exact:
-                    dh_dp{SDpath}=@(p) h{SDpath}(1)-h{SDpath}(0);
-                    %ONLY STRAIGHT LINES FOR POLYNOMIALS, LOCALLY FOR OTHER
-                    %STUFF
-                end
-
                 %change position of singularities with change of variables
                 COVsingularities=singularities;
                 for s=1:length(singularities)
@@ -96,8 +89,28 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
                     %CASES:
                     COVsingularities(s).position=(singularities(s).position-realPoints(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
                 end
+                
                 % get weights and nodes for path.
                 [x{SDpath}, w{SDpath}]=pathQuad( 0, inf, pathPowers(SDpath), COVsingularities, N );
+                
+                if pathPowers(SDpath)==1 %non degenerate stationary point or endpoint integral
+                    dh_dp{SDpath}=@(p) 1i*DerivOfInverseOf_g(g.eval(realPoints(SDpath))+1i.*p.^pathPowers(SDpath));
+                else
+                %ULTIMATELY SHOULD INCLUDE SOME TEST HERE IN CASE THE
+                %INVERSE DOESN'T CANCEL NICELY, and if it fails, then
+                %compute derivatives via the Cauchy integral
+                %this may happen for stationary points where Gauss-Hermite
+                %is used, as there (may) be a quadrature point exactly at
+                %the stationary point, where the derivative of the inverse is undefined
+
+%                     CauchyCentre=mean(x{SDpath}./(freq^(1/pathPowers(SDpath))));
+%                     CauchyRadius=max(abs(CauchyCentre-x{SDpath}));
+%                     dh_dp{SDpath}=@(a) CauchyDiff( a, h{SDpath}, CauchyCentre, CauchyRadius, nCauchy);
+                    dh_dp{SDpath}=@(p) pathPowers(SDpath)*p.^(pathPowers(SDpath)-1)*1i.*DerivOfInverseOf_g(g.eval(realPoints(SDpath))+1i.*p.^pathPowers(SDpath));
+                                  %    =i*r*p^{r-1}*(g^-1)'(g(a)+ip^r),
+                                  %    (chain rule)
+                end
+                
                 %now append weights and nodes to the rest, noting that we subtract every even path, as these are coming back down from
                 %infinity
                 W_{SDpath}=((-1)^(SDpath+1)/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*g.eval(realPoints(SDpath))).*dh_dp{SDpath}(x{SDpath}./(freq^(1/pathPowers(SDpath)))).*w{SDpath};
