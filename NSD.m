@@ -5,9 +5,10 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
     %error in comparing limits of arguemnt of paths at infinity
     errTol=1E-14;
 
+    %currently defunct constant hard-coded for cases where Cauchy integral
+    %is needed:
     nCauchy=15;
         
-    %CANNOT YET HANDLE STATIONARY POINTS AT ENDPOINTS OF INTEGRAL
     if nargin<5
         error('Cant automatically determine inverse / derivatives / singularities of phase function yet')    
     end
@@ -61,7 +62,6 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
                 end
             end
         end
-        %pathPowers=[1 repmat(g.order+1,1,2) 1];
 
         X=[];   W=[];
             for SDpath=[1 numPaths 2:(numPaths-1)]
@@ -93,10 +93,11 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
                                branch=branch+1;
                                h{SDpath}=@(p) g.inverse{branch}(g.eval(realPoints(SDpath))+1i*p.^pathPowers(SDpath));
                             end
+                            %THIS APPROACH OF USING INFINITY SEEMS A BIT
+                            %RISKY. In general, want to just choose the
+                            %path which hugs the real axis closest
                         end
                         %function is invertible, so can define SD paths
-                        %can write the derivative of the inverse of g using that a-level trick
-                        %that I forgot about
                         DerivOfInverseOf_g=@(x) g.derivOfInverse{branch}(x);
 
                 else
