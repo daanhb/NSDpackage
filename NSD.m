@@ -35,14 +35,9 @@ function [ X, W ] = NSD( a,b,N,g,singularities )
         %get frequency
         freq=g.freq;
         
-        %determine which stationary points are in the interior, as these
-        %must be handled differently to the special case of endpoint
-        interiorStationaryPoints=[];
-        for j=1:length(g.stationaryPoints)
-            if ~ismember(g.stationaryPoints(j),[a b])
-                interiorStationaryPoints=[interiorStationaryPoints g.stationaryPoints(j)];
-            end
-        end
+        %seperate the interior stationary points
+        interiorStationaryPoints=getInteriorStationaryPoints( g.stationaryPoints, a, b );
+        
         %determine the number of steepest descent paths
         numPaths=2*length(interiorStationaryPoints)+2;
         
