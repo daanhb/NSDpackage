@@ -1,4 +1,6 @@
 clear classes;
+%chebfun gives some warnings that I don't understand
+warning('off','MATLAB:catenate:DimensionMismatch');
 %add the quadrature paths
 addpath ../../hoipack/quadrules;
 addpath ../../hoipack/OPQ;
@@ -28,5 +30,10 @@ for j=1:length(f)
     tic;
     [ x, w ] = ChebNSD( a,b,1000,Npts,g{j},Dg{j},DDg{j} );
     relErr(j)=abs(f{j}(x).'*w-exactValue{j});
-    fprintf('Abs err %d: %e\n, took %.2f secs', j, relErr(j),toc);
+    fprintf('\nAbs err ChebNSD %d: %e\n\t, took %.2f secs', j, relErr(j),toc);
+    
+    tic;
+    [ x45, w45 ] = ChebNSD45( a,b,1000,Npts,g{j} );
+    relErr45(j)=abs(f{j}(x45).'*w45-exactValue{j});
+    fprintf('\nAbs err ChebNSD45 %d: %e\n\t, took %.2f secs', j, relErr45(j),toc);
 end
