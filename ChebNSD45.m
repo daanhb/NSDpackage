@@ -2,9 +2,10 @@ function [ X, W ] = ChebNSD45( a,b,freq,N,g)
 %Where important information about the phase g(x) is unknown, this code
 %will approximate the information using Chebfun.
 
+
 %ASSUMES STATIONARY POINTS LIE IN INTERIOR, AND NO SINGULARITIES
     ErrTol=1E-3;
-    RelTol=1E-10;
+    RelTol=1E-3;
 
 %first determine stationary points
     G{1}=chebfun(g,[a b], 'splitting', 'on');
@@ -50,12 +51,15 @@ function [ X, W ] = ChebNSD45( a,b,freq,N,g)
         if pathPowers(SDpath)>1
             dhdp{SDpath}=H(2:end,2);
         else
-            dhdpCheb=diff(chebfun(h{SDpath}));
-            dhdp{SDpath}=dhdpCheb(P0(2:end));
+            %dhdpCheb=diff(chebfun(h{SDpath}));
+            %error comes from here, as Chebfun doesn't know x coords of
+            %points
+            %*a better option is to re-insert h(p) into DE for h'(p)*
+            dhdp{SDpath}=1i./G{2}(H(2:end));
         end
                 
         W_{SDpath}=((-1)^(SDpath+1)/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*g(realPoints(SDpath))).*dhdp{SDpath}.*w{SDpath};
-        %ERROR HERE. Somehow for g(x)~x case, the 1/omega is already
+        %ERROR HERE. Somehow for g(x)~x case, the i/omega is already
         %absorbed into h'(p) (causing an error), but for g(x)~x^2 it isn't 
         X_{SDpath}=h{SDpath}; 
                 

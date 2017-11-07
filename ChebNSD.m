@@ -6,6 +6,13 @@ function [ X, W ] = ChebNSD( a,b,freq,N,varargin )
 
 %ASSUMES STATIONARY POINTS LIE IN INTERIOR, AND NO SINGULARITIES
     ErrTol=1E-3;
+    
+%WARNING TO SELF:
+%Chebfun is designed for functions on [a,b]=[-1,1], when this changes, will
+%need to make other changes too
+if a~=-1 || b~=1
+    error('Need to account for Chebfun outside of [-1,1]');
+end
 
 %first determine stationary points
     ChebDg=chebfun(g{2},[a b], 'splitting', 'on');
