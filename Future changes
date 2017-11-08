@@ -1,0 +1,13 @@
+Short term:
+1. Improve root finding algorithm
+2. Find the bug which causes that \epsilon-issue
+3. Split code up into sensible components
+4. Write test file for particularly nasty cases
+
+
+Long term:
+1. Detect poles in complex plane
+2. Allow phase g(x) to be complex, or have singularities/poles
+3. Detect if integrand is/isn't oscillatory
+4. Split into continuous chunks using Chebfun
+5. Account for g(x)=x^(1/2)~type branch cuts
