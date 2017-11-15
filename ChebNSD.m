@@ -84,13 +84,13 @@ function [ X, W ] = ChebNSD( a,b,freq,N,varargin )
 %         end
     
         %L{SDpath}.op = @(p,h) diff(h)-pathPowers(SDpath)*1i*p^(pathPowers(SDpath)-1)/Dg(h);
-        
+        dg = diff( chebfun(g{1}, L{SDpath}.domain) );
         switch pathPowers(SDpath)
             case 1
                 L{SDpath}.op = @(p,h) diff(h).*g{2}(h)-1i;
                 L{SDpath}.lbc=[realPoints(SDpath)];
             case 2
-                L{SDpath}.op = @(p,h) diff(h,2)*g{2}(h)+(diff(h))^2*g{3}(h)-2i;
+                L{SDpath}.op = @(p,h) diff(h,2).*dg+(diff(h)).^2*g{3}(h)-2i;
                 L{SDpath}.lbc=[realPoints(SDpath), LocDh(SDpath)];
         end
         
