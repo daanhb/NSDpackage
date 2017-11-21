@@ -27,6 +27,8 @@ function allZeros = findZerosRect( f, df, rectIn, thresh, N )
         if zeroOnLine
             %retry with a larger rectangle
             newRect=mean(rectIn) + (1+rand/10)*[-width-1i*height  width-1i*height  width+1i*height  -width+1i*height]/2;
+            %THE ABOVE IS DODGY, IT ASSUMES THAT VERTICES ARE INPUT IN
+            %CERTAIN ORDER
             allZeros = findZerosRect( f, df, newRect, thresh, N );
             return;
         end

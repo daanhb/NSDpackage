@@ -10,11 +10,8 @@ function dHdp = NSDpathODE(p,h,n,g)
             %H=h
             
         case 1
-%             dHdp = [h(2); (2i-h(2).^2.*(g{3}(h(1))))./g{2}(h(1))]; 
-%             %H=[h',h], aparantly... changed to:
-            dHdp = [(2i-h(1).^2.*(g{3}(h(2))))./g{2}(h(2)); h(1)]; 
-            %H=[h',h], hopefully...
-
+            dHdp = [h(2); (2i-h(2).^2.*(g{3}(h(1))))./g{2}(h(1))]; 
+            %H=[h',h], aparantly...
             
             %not sure if this longer equation is necessary... could instead
             %just try writing:

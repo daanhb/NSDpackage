@@ -1,4 +1,4 @@
-function argPri = countZerosRect( f,df, rect, N, moments )
+function argPri = countZerosSingsRect( f,df, rect, N, moments )
 %detects roots of analytic function inside of a given rectangle in complex
 %domain
 %N is number of points per unit length of rectangle
