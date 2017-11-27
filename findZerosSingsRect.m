@@ -1,4 +1,4 @@
-function [zeros, sings, zeroCount, singCount] = findZerosSingsRect( f, df, rectIn, thresh, N )
+function [zeros, sings, zeroCount, singCount] = findZerosSingsRect( f, df, rectIn, thresh, N, info )
 %detects roots of analytic function inside of a given rectangle in complex
 %domain
 %N is number of points per unit length of rectangle
@@ -7,7 +7,6 @@ function [zeros, sings, zeroCount, singCount] = findZerosSingsRect( f, df, rectI
 MaxMoment=4; %take this many moments as safety net for if the order of a zero cancels with the order of a pole
 zeros=[]; sings=[]; zeroCount=[]; singCount=[];
 countThresh=.01; %order of singularities/stationary points will be ignored beyond this
-info=true;     %if true, info and plots will be produced as this runs
 bodgeCount=0;
 
     if nargin<=4
@@ -18,6 +17,9 @@ bodgeCount=0;
         error('rectangle must consist of four complex values, ordered anti-clockwise');
     end
     
+    if nargin<=5
+        info=false;
+    end
     
     height=max(imag(rectIn))-min(imag(rectIn));
     width=max(real(rectIn))-min(real(rectIn));
@@ -76,8 +78,8 @@ bodgeCount=0;
 %             %located
 %             [zerosA, singsA, zeroCountA, singCountA]=findZerosSingsRect( f, df, newRectA, thresh, N );
 %             [zerosB, singsB, zeroCountB, singCountB]=findZerosSingsRect( f, df, newRectB, thresh, N );
-            [zerosA, singsA]=findZerosSingsRect( f, df, newRectA, thresh, N );
-            [zerosB, singsB]=findZerosSingsRect( f, df, newRectB, thresh, N );
+            [zerosA, singsA]=findZerosSingsRect( f, df, newRectA, thresh, N, info );
+            [zerosB, singsB]=findZerosSingsRect( f, df, newRectB, thresh, N, info );
             zeros=[zerosA zerosB]; sings=[singsA singsB];
             % zeroCount=[zeroCountA zeroCountB]; singCount=[singCountA singCountB];
             %polish things up with this function:

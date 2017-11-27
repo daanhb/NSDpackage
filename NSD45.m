@@ -8,6 +8,16 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %need n+1 derivatives for paths at nth order stationary points. Could
 %approximate these using Cauchy Diff formula, if there are no poles...
 
+%if there is a stationary point just outside of [a,b] on the real line what do we do about
+%it? It will get picked up by the root finder. If we can plot the level
+%curvers from h_a(Pmax) to h_b(Pmax), can check for stationary points
+%inside of this region... maybz
+
+%if the points on the SD path end up outside of the initial rectangle, then
+%there might be stationary points nearby which should be considered; in
+%fact it may be sensible to start over with a larger rectangle, to be
+%totally robust.
+
     %% ------------------------------------------------------------------%
     % -------------------------- KEY PARAMETERS ------------------------ %
     %--------------------------------------------------------------------%
@@ -28,20 +38,14 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %and one value for 'quite big'
         %to identify exponential growth, instead of decay:
         wrongPathThresh=2;
+        
+    %flag for plotting stuff as we go
+        visuals=false;
+        analytic=false;
     
     %% ------------------------------------------------------------------%
     % -------------------- INTERPRET USER INPUT ------------------------ %
     %--------------------------------------------------------------------%
-    
-    %assumes g is a cell array containing increasing derivatives of phase
-    %function g. Requires at least up to G{3}:=g"(x)
-    if length(G)<3
-        error('Require up to second derivative of phase function');
-        %could potentially make a hack where only g' is required. This can
-        %then be used to find singularities of g, and then a Cauchy
-        %integral can be used to determine derivatives, avoiding
-        %singularities / subtracting residues
-    end
 
     %use NaN to store things which are not yet defined, as opposed to
     %empty (which is denoted [], and may be specified by the user):
@@ -51,10 +55,13 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %check through optional inputs
     for j=1:length(varargin)
         lowerCaseArg=lower(varargin{j});
-        if ~isempty(lowerCaseArg)
+        if ischar(lowerCaseArg)
            switch  lowerCaseArg
                case 'stationary points'
                    stationaryPoints=varargin{j+1};
+                   if isempty(stationaryPoints)
+                       order=[];
+                   end
                case 'singularities'
                    fPoles=varargin{j+1};
                case 'poles'
@@ -71,7 +78,12 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                case 'ginv' %user has provided inverse of g(x)
 
                case 'gderinv' %user has provided inverse of g'(x)
-
+                   
+               case 'analytic'
+                   analytic=varargin{j+1};
+               case 'visuals on'
+                   visuals=true;
+                   hold on;
            end
        end
     end
@@ -110,6 +122,19 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %--------------------------------------------------------------------%
     
     if isnan(stationaryPoints) %no stationary points specified by user
+        if ~analytic
+           error('Can only detect stationary points of analytic functions'); 
+        end
+        %assumes g is a cell array containing increasing derivatives of phase
+        %function g. Requires at least up to G{3}:=g"(x)
+        if length(G)<3
+            error('Require up to second derivative of phase function to detect stationary points');
+            %could potentially make a hack where only g' is required. This can
+            %then be used to find singularities of g, and then a Cauchy
+            %integral can be used to determine derivatives, avoiding
+            %singularities / subtracting residues
+        end
+        
         %construct a comlpex rectangle around [a,b], such that stationary points 
         %outside of this region can be ignored:
         rectRad=abs(log((RectPerimThresh/Mf)^(1/freq)));
@@ -117,7 +142,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         % U_{x\in[a,b]} B_r(x)
         initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];
         %now find all stationary points inside of this rectangle
-        [stationaryPoints, gPoles, order, poleOrder] = findZerosSingsRect( G{2}, G{3}, initRect, RectTol, N );
+        [stationaryPoints, gPoles, order, poleOrder] = findZerosSingsRect( G{2}, G{3}, initRect, RectTol, N , visuals);
     end
     
     %now determine branch points
@@ -150,22 +175,29 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     end
     
     %sort stationary points in order of real components:
-    stationaryPoints=sort(stationaryPoints,'ComparisonMethod','real');
+    %stationaryPoints=sort(stationaryPoints,'ComparisonMethod','real');
     
     numPaths=2*length(stationaryPoints);
     startPath=[stationaryPoints stationaryPoints];
+    startPath=sort(startPath,'ComparisonMethod','real');
     pathPowers=round([order order]) + 1;
     
     %now determine if a or b are at a stationary point
-    if min(abs(stationaryPoints-a))>RectTol
-        startPath=[a startPath];
-        pathPowers=[1 pathPowers];
-        numPaths=numPaths+1;
-    end
-    if min(abs(stationaryPoints-b))>RectTol
-        startPath=[startPath b];
-        pathPowers=[pathPowers 1];
-        numPaths=numPaths+1;
+    if isempty(stationaryPoints)
+        startPath=[a b];
+        pathPowers=[1 1];
+        numPaths=2;
+    else
+        if min(abs(stationaryPoints-a))>RectTol
+            startPath=[a startPath];
+            pathPowers=[1 pathPowers];
+            numPaths=numPaths+1;
+        end
+        if min(abs(stationaryPoints-b))>RectTol
+            startPath=[startPath b];
+            pathPowers=[pathPowers 1];
+            numPaths=numPaths+1;
+        end
     end
     
     
@@ -220,6 +252,15 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     % -------------------------- COMPUTE PATHS ------------------------- %
     %--------------------------------------------------------------------%
     
+    % if not enough derivatives provided, approximate them by Cauchy
+    %differentiation formula
+    if analytic && length(G)<max(pathPowers)+1
+        origGlength=length(G);
+        for extraG=(origGlength+1) : (max(pathPowers)+1)
+            G{extraG}=@(z) CauchyDiff( z,G{origGlength}, z, rectTol, extraG-origGlength, Npts );
+        end
+    end
+    
 %     %total number of paths:
 %     numPaths=length(realPoints);
     
@@ -243,21 +284,21 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             case  1
                 ICs=startPath(SDpath) ;
             case 2
-                ICs=[NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); startPath(SDpath) ];
+                ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ) ];
             otherwise
-                ICs=[ NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); startPath(SDpath); zeros(pathPowers(SDpath)-2,1) ];
+                ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); zeros(pathPowers(SDpath)-2,1) ];
         end
         
         %now solve IVP:
-        [~,H] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(SDpath)-1,G), P0, ICs, odeset('RelTol',RelTol) );
+        [~,H] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(SDpath)-1,G, ICs), P0, ICs, odeset('RelTol',RelTol) );
         %NEED TO INPUT HIGHER ORDER DE's INTO NSDpathODE.m
         %H(:,1) contains h'(p), H(:,2) contains h(p), will throw away initial
         %points
         
         if pathPowers(SDpath)>1
             % h'(p) given as output of ODE45, so use it
-            h{SDpath}=H(2:end,2);
-            dhdp{SDpath}=H(2:end,1);
+            h{SDpath}=H(2:end,1);
+            dhdp{SDpath}=H(2:end,2);
         else
             %re-insert h(p) into DE for h'(p)*
             h{SDpath}=H(2:end);
@@ -271,11 +312,19 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         X_{SDpath}=h{SDpath}; 
                 
     end
+%     
+%     if visuals
+%         hLev = NSDlevelCurves(h{1}(end), h{end}(end), G, freq);
+%         plot(hLev,'r');
+%     end
     
     X=[];   W=[];
     for SDpath=1:numPaths
         W=[W; W_{SDpath}];
         X=[X; X_{SDpath};];          
     end
-
+    if visuals
+        plot(X,'kx');
+        hold off;
+    end
 end
