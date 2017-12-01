@@ -289,6 +289,9 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %     %total number of paths:
 %     numPaths=length(realPoints);
     
+    %initlaise matrix for path finding
+    P=NaN(numPaths,2);
+    
     %now loop over all paths:
     for SDpath=1:numPaths
         
@@ -335,6 +338,9 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         W_{SDpath}=((-1)^(SDpath+1)/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*G{1}(startPath(SDpath))).*dhdp{SDpath}.*w{SDpath};
         
         X_{SDpath}=h{SDpath}; 
+        
+        P(SDpath,1)=startPath(SDpath);
+        P(SDpath,2)=X_{SDpath}(end);        
                 
     end
 %     
@@ -342,6 +348,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %         hLev = NSDlevelCurves(h{1}(end), h{end}(end), G, freq);
 %         plot(hLev,'r');
 %     end
+    pathOrder=findFullPath( P, G{1},  freq, 1E-10, 100 );
     
     X=[];   W=[];
     for SDpath=1:numPaths
