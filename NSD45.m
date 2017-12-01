@@ -46,16 +46,28 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %% ------------------------------------------------------------------%
     % -------------------- INTERPRET USER INPUT ------------------------ %
     %--------------------------------------------------------------------%
+    
+%     if iscell(varargin)
+%         vararginCopy=varargin;
+%         for j=1:length(varargin);
+%            varargin{j}= vararginCopy{j};
+%         end
+%     end
 
+    if length(varargin)==1
+        %glitchy Matlab varagin thing, only an issue when this function 
+        %call's it's self recursively. Fix it here:
+        varargin=varargin{1};
+    end
     %use NaN to store things which are not yet defined, as opposed to
     %empty (which is denoted [], and may be specified by the user):
     stationaryPoints=NaN;
-    fPoles=[]; %singularities in f, not g
+    fSingularities=[]; %singularities in f, not g
     Mf=1;
     %check through optional inputs
     for j=1:length(varargin)
-        lowerCaseArg=lower(varargin{j});
-        if ischar(lowerCaseArg)
+        if ischar(varargin{j})
+           lowerCaseArg=lower(varargin{j});
            switch  lowerCaseArg
                case 'stationary points'
                    stationaryPoints=varargin{j+1};
@@ -63,7 +75,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                        order=[];
                    end
                case 'singularities'
-                   fPoles=varargin{j+1};
+                   fSingularities=varargin{j+1};
                case 'poles'
                    gPoles=varargin{j+1};
                    if isempty(gPoles)
@@ -95,7 +107,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     %check for singularities in (real) interior of integration range:
     interiorSingularities=[];
-    for s=fPoles
+    for s=fSingularities
        if  a<s.position && s.position<b
            interiorSingularities=[interiorSingularities s.position];
        end
@@ -109,7 +121,8 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         X=[]; W=[];
         for j=1:(length(intervalSplit)-1)
             %call self recursively, without interior singularities:
-            [ X_, W_ ] = NSD45( intervalSplit(j),intervalSplit(j+1),N,G,'Singularities',fPoles );
+            %vararginCopy=varargin;
+            [ X_, W_ ] = NSD45( intervalSplit(j),intervalSplit(j+1),freq,N,G,varargin);
             X=[X; X_;]; W=[W; W_;];
         end
         %and end routine 'early'
@@ -123,12 +136,17 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     if isnan(stationaryPoints) %no stationary points specified by user
         if ~analytic
-           error('Can only detect stationary points of analytic functions'); 
+           error('Can only detect stationary points of analytic phase functions'); 
         end
         %assumes g is a cell array containing increasing derivatives of phase
         %function g. Requires at least up to G{3}:=g"(x)
         if length(G)<3
-            error('Require up to second derivative of phase function to detect stationary points');
+            if ~analytic
+                error('Require up to second derivative of phase non-analytic functions, OR an anlytic phase function, to automatically detect stationary points');
+            else
+                G=finishDerivs( G, 3, N, RectTol );
+            end
+            
             %could potentially make a hack where only g' is required. This can
             %then be used to find singularities of g, and then a Cauchy
             %integral can be used to determine derivatives, avoiding
@@ -192,11 +210,21 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             startPath=[a startPath];
             pathPowers=[1 pathPowers];
             numPaths=numPaths+1;
+        else
+            %delete repeated path, and swap remaining one for endpoint a
+            startPath=[a startPath(3:end)];
+            pathPowers=pathPowers(2:end);
+            numPaths=numPaths-1;
         end
         if min(abs(stationaryPoints-b))>RectTol
             startPath=[startPath b];
             pathPowers=[pathPowers 1];
             numPaths=numPaths+1;
+        else
+            %delete repeated path, and swap remaining one for endpoint a
+            startPath=[startPath(3:end) b];
+            pathPowers=pathPowers(1:(end-1));
+            numPaths=numPaths-1;
         end
     end
     
@@ -255,10 +283,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     % if not enough derivatives provided, approximate them by Cauchy
     %differentiation formula
     if analytic && length(G)<max(pathPowers)+1
-        origGlength=length(G);
-        for extraG=(origGlength+1) : (max(pathPowers)+1)
-            G{extraG}=@(z) CauchyDiff( z,G{origGlength}, z, rectTol, extraG-origGlength, Npts );
-        end
+        G = finishDerivs( G, max(pathPowers)+1, N, RectTol );
     end
     
 %     %total number of paths:
@@ -268,9 +293,9 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     for SDpath=1:numPaths
         
         %change position of singularities with change of variables
-        COVsingularities=fPoles;
-        for s=1:length(fPoles)
-            COVsingularities(s).position=(fPoles(s).position-startPath(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
+        COVsingularities=fSingularities;
+        for s=1:length(fSingularities)
+            COVsingularities(s).position=(fSingularities(s).position-startPath(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
             %THIS MAP only works for real singularities
         end
                 
