@@ -1,6 +1,6 @@
 clear; clc;
 
-% adapt brute force to handle singularities better
+% add singularities into brute force bit of loop
 
 % distinguish better between analytic f and g.
 
@@ -8,46 +8,57 @@ clear; clc;
 
 %finally add check for number of oscillations of function
 
-%add visuals to the uneccessary Cauchy integral bit
+%add visuals to the uneccessary Cauchy integral bit... and try to fix it
+
+%remove residues...? Can use CauchyDiff with n=-1, already can detect singularities
+    %the hard part is determining if they lie inside the path of
+    %deformation
+    
+%add the old inverse functionality back in at some point
 
 Npts=15;
-Nbruce=30;
+Nbruce=150;
 
 freqs=[100 1000 10000 100000];
 
-F={@(z) z.^2, @(z) ones(size(z)), @(z) log(z+1)};
-Fsingularities={[],[],singularity(1, -1, 'log', 'point'), [], [], [], [], [], [], [], [], [], []};
+F={@(z) ones(size(z)), @(z) z.^2,  @(z) log(z+1)};
+Fsingularities={[],[],singularity(1, -1, 'log', 'point'), [], []};
+FbruceSingularities={[],[],-1};
 
+gCount=1;
 % %start with analytic phases
-%     G{1}={@(x) x, @(x) 1, @(x) 0};
-%     G{2}={ @(x)x.^3  ,  @(x)3*x.^2 ,  @(x)6*x  ,  @(x)6};
-      smallBit=0.001;
-      G{1}={@(x)x.^3+smallBit*x ,   @(x)3*x.^2+smallBit  ,  @(x)6*x  ,  @(x)6};
-%     G{4}={@(x) x.^2}; %use Cauchy derivs to approximate higher derivs here
-%     G{5}={@(x) x.^2, @(x) 2*x, @(x) 2*ones(size(x))};
-%     G{6} = SqrtTypePhase( .5,1 ); %non-cheating version of what comes later
-    G{2}={@(x) x.^.5,@(x) .5*x.^-.5, @(x) -.25*x.^-1.5};
-    G{3}={@(x) x.^2.*sqrt(x-1), @(x)  (x.* (5*x - 4))./(2 .*sqrt(x - 1)), @(x)  (15*x.^2 - 24*x + 8)./(4* (x - 1).^(3/2))};
-    %above function has complex valued for real argument, in particular
-    %at it's stationary point at x=0.8. This ballses up the NSD code
-    %massively, blowing up the value of the integrand. Currently this gets
-    %binned off by the NSD code, as it assumes that it's not on the SD
-    %path.
+%      G{gCount}={@(x) x, @(x) 1, @(x) 0}; gCount=gCount+1;
+%      G{gCount}={ @(x)x.^3  ,  @(x)3*x.^2 ,  @(x)6*x  ,  @(x)6};gCount=gCount+1;
+%       
+%      smallBit=0.001; G{gCount}={@(x)x.^3+smallBit*x ,   @(x)3*x.^2+smallBit  ,  @(x)6*x  ,  @(x)6};gCount=gCount+1;
+%     G{gCount}={@(x) x.^2}; gCount=gCount+1; %use Cauchy derivs to approximate higher derivs here
+     G{gCount}={@(x) x.^2, @(x) 2*x, @(x) 2*ones(size(x))}; Gsingularities{gCount}=[];
+%     G{gCount} = SqrtTypePhase( .5,1 ); %non-cheating version of what comes later
+     G{gCount}={@(x) x.^.5, @(x) .5*x.^-.5, @(x) -.25*x.^-1.5}; a{gCount}=-0.1; b{gCount}=1; Gsingularities{gCount}=0; gCount=gCount+1;
+    
+%     G{gCount}={@(x) x.^2.*sqrt(x-1), @(x)  (x.* (5*x - 4))./(2 .*sqrt(x - 1)), @(x)  (15*x.^2 - 24*x + 8)./(4* (x - 1).^(3/2))}; gCount=gCount+1;
 
-analyticCount=length(G);
+%the following phase is bad because it has a large negative imaginary
+%component at the endpoints, which transforms to a large exponential
+%argument on the NSD path:
+%    G{gCount}={@(x) x.^3./3-(3i*x.^2)./8-x./8, @(x) (x-1i/2).*(x-1i/4), @(x)  2*x+3i/4, @(x) 2, @(x)1}; gCount=gCount+1;
 
+
+analyticCount=gCount-1;
 %now do the special cases, non-analytic functions, which require more info currently
     %Simon's nasty one:
-    G{analyticCount+1}={@(x) (x+1).^-1, @(x) -(x+1).^-2, @(x) 2*(x+1).^-3, @(x) -6*(x+1).^-4};
-    a{analyticCount+1}=0; b{analyticCount+1}=1;
-    SPs{analyticCount+1}=[]; 
-    gPoles{analyticCount+1}=[];
+    G{gCount}={@(x) (x+1).^-1, @(x) -(x+1).^-2, @(x) 2*(x+1).^-3, @(x) -6*(x+1).^-4};
+    a{gCount}=0; b{gCount}=1;
+    SPs{gCount}=[]; 
+    gPoles{gCount}=[];
+    gCount=gCount+1;
 
     %now do an HNA-type integral. This function will provide all of the
     %necessary inputs, although it is cheating a little.
-    [G{analyticCount+2}, SPs{analyticCount+2}, SPOs{analyticCount+2} ] = SqrtTypePhase( .5,1 );
-    a{analyticCount+2}=-1; b{analyticCount+2}=1;
-    gPoles{analyticCount+2}=[];
+    [G{gCount}, SPs{gCount}, SPOs{gCount} ] = SqrtTypePhase( .5,1 );Gsingularities{gCount}=[];
+    a{gCount}=-1; b{gCount}=1;
+    gPoles{gCount}=[];
+    gCount=gCount+1;
     
 
 %create blank variables to store timings:

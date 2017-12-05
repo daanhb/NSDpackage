@@ -29,11 +29,12 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         %tolerance for ODE45 solver:
         RelTol=1E-13;
         %tolerance for two statoionary points to become clumped together:
-        RectTol=10^-2;
+        RectTol=10^-3;
         %abs value estimate at edge of rectangle
         RectPerimThresh=1E-16;
         %distance from an integer to be considered not an integer
         intThresh=0.01;
+        rectSretch=10;
     
     %and one value for 'quite big'
         %to identify exponential growth, instead of decay:
@@ -155,7 +156,15 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         
         %construct a comlpex rectangle around [a,b], such that stationary points 
         %outside of this region can be ignored:
-        rectRad=abs(log((RectPerimThresh/Mf)^(1/freq)));
+        %rectRad=rectSretch*abs(log((RectPerimThresh/Mf)^(1/freq)));
+        
+        %the thin rectangle approach failed, because my understanding of
+        %complex analysis was shite when it was concieved.
+        % key stationary points, outside of the rectangle, were being
+        % missed
+        %This one should work better, although the '2' is arbintrary.
+        rectRad=2*(b-a);
+        
         %define the smallest rectangle containing the cylinder 
         % U_{x\in[a,b]} B_r(x)
         initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];
@@ -294,66 +303,79 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     %now loop over all paths:
     for SDpath=1:numPaths
-        
-        %change position of singularities with change of variables
-        COVsingularities=fSingularities;
-        for s=1:length(fSingularities)
-            COVsingularities(s).position=(fSingularities(s).position-startPath(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
-            %THIS MAP only works for real singularities
+        try %ODE45 may fail to find certain paths, although these typically seem to be paths which we do not take
+            %change position of singularities with change of variables
+            COVsingularities=fSingularities;
+            for s=1:length(fSingularities)
+                COVsingularities(s).position=(fSingularities(s).position-startPath(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
+                %THIS MAP only works for real singularities
+            end
+
+            %get weights and nodes
+            [x{SDpath}, w{SDpath}]=pathQuad( 0, inf, pathPowers(SDpath), COVsingularities, N );
+            P0=[0; (x{SDpath}./(freq^(1/pathPowers(SDpath))))];
+
+            %set ICs for SD path differential equation, which will determine SD
+            %path:
+            switch pathPowers(SDpath)
+                case  1
+                    ICs=startPath(SDpath) ;
+                case 2
+                    ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ) ];
+                otherwise
+                    ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); zeros(pathPowers(SDpath)-2,1) ];
+            end
+
+            %now solve IVP:
+            [~,H] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(SDpath)-1,G, ICs), P0, ICs, odeset('RelTol',RelTol) );
+    %         warnODE45 = warning('query','last');
+    %         if 
+
+            %NEED TO INPUT HIGHER ORDER DE's INTO NSDpathODE.m
+            %H(:,1) contains h'(p), H(:,2) contains h(p), will throw away initial
+            %points
+
+            if pathPowers(SDpath)>1
+                % h'(p) given as output of ODE45, so use it
+                h{SDpath}=H(2:end,1);
+                dhdp{SDpath}=H(2:end,2);
+            else
+                %re-insert h(p) into DE for h'(p)*
+                h{SDpath}=H(2:end);
+                dhdp{SDpath}=1i./G{2}(H(2:end));
+            end
+
+            %absorb h'(p) and other constants into weights, also negate paths
+            %incoming from infinity
+            W_{SDpath}=(1/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*G{1}(startPath(SDpath))).*dhdp{SDpath}.*w{SDpath};
+
+            X_{SDpath}=h{SDpath}; 
+            
+            P(SDpath,1)=startPath(SDpath);
+            P(SDpath,2)=X_{SDpath}(end);   
+        catch  %shall not be used, ODE45 failed
+            W_{SDpath}=[]; 
+            X_{SDpath}=NaN;
+            
+            P(SDpath,1)=NaN;
+            P(SDpath,2)=NaN;   
         end
-                
-        %get weights and nodes
-        [x{SDpath}, w{SDpath}]=pathQuad( 0, inf, pathPowers(SDpath), COVsingularities, N );
-        P0=[0; (x{SDpath}./(freq^(1/pathPowers(SDpath))))];
-        
-        %set ICs for SD path differential equation, which will determine SD
-        %path:
-        switch pathPowers(SDpath)
-            case  1
-                ICs=startPath(SDpath) ;
-            case 2
-                ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ) ];
-            otherwise
-                ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); zeros(pathPowers(SDpath)-2,1) ];
-        end
-        
-        %now solve IVP:
-        [~,H] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(SDpath)-1,G, ICs), P0, ICs, odeset('RelTol',RelTol) );
-        %NEED TO INPUT HIGHER ORDER DE's INTO NSDpathODE.m
-        %H(:,1) contains h'(p), H(:,2) contains h(p), will throw away initial
-        %points
-        
-        if pathPowers(SDpath)>1
-            % h'(p) given as output of ODE45, so use it
-            h{SDpath}=H(2:end,1);
-            dhdp{SDpath}=H(2:end,2);
-        else
-            %re-insert h(p) into DE for h'(p)*
-            h{SDpath}=H(2:end);
-            dhdp{SDpath}=1i./G{2}(H(2:end));
-        end
-                
-        %absorb h'(p) and other constants into weights, also negate paths
-        %incoming from infinity
-        W_{SDpath}=((-1)^(SDpath+1)/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*G{1}(startPath(SDpath))).*dhdp{SDpath}.*w{SDpath};
-        
-        X_{SDpath}=h{SDpath}; 
-        
-        P(SDpath,1)=startPath(SDpath);
-        P(SDpath,2)=X_{SDpath}(end);        
                 
     end
-%     
-%     if visuals
-%         hLev = NSDlevelCurves(h{1}(end), h{end}(end), G, freq);
-%         plot(hLev,'r');
-%     end
-    pathOrder=findFullPath( P, G{1},  freq, 1E-10, 100 );
+    
+    %there is a difference between knowing the path, and walking the path%
+    try
+        pathOrder=findFullPath( P, G{1}, freq, 1E-10, 25 );
+    catch
+        error('Could not find suitable SD path from a to b :-(');
+    end
     
     X=[];   W=[];
-    for SDpath=1:numPaths
-        W=[W; W_{SDpath}];
-        X=[X; X_{SDpath};];          
+    inOut=1;
+    for SDpath=pathOrder
+        W=[W; inOut*W_{SDpath}];
+        X=[X; X_{SDpath};];       
+        inOut=inOut*-1;
     end
     if visuals
         plot(X,'kx');

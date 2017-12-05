@@ -1,4 +1,4 @@
-function [ X, W ] = GradedQuad( N,p_max,delta )
+function [ X, W ] = GradedQuadFreq( N,p_max,delta )
 %1D graded quadrature routine
     [Z,w]=gauleg(N);
     Z=(Z+1)/2; w=w/2;

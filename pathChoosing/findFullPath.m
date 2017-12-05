@@ -21,6 +21,10 @@ function path = findFullPath( P, g,  freq, thresh, Npts )
     end
     
     %now compute shortest path from a to b
-    [~,path]=dijkstra(A,6,1);
+    G = graph(A.','upper');
+    path=shortestpath(G,1,m);
+    
+    %now compute shortest path from a to b
+    %[~,path]=dijkstra(A,m,1);
     
 end

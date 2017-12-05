@@ -107,7 +107,8 @@ bodgeCount=0;
         height=max(imag(rect))-min(imag(rect));
         width=max(real(rect))-min(real(rect));
         if info
-            fprintf('\n%e',max(height,width));
+            %fprintf('\n%e',max(height,width)); 
+            %commented out, this is boring
         end
         
     end
