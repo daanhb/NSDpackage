@@ -3,11 +3,6 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %will approximate the information using and ODE45.
 %We do ask however, that the user provides derivatives of g
 
-%trying not to use Chebfun this time...
-
-%need n+1 derivatives for paths at nth order stationary points. Could
-%approximate these using Cauchy Diff formula, if there are no poles...
-
 %if there is a stationary point just outside of [a,b] on the real line what do we do about
 %it? It will get picked up by the root finder. If we can plot the level
 %curvers from h_a(Pmax) to h_b(Pmax), can check for stationary points
@@ -47,13 +42,6 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %% ------------------------------------------------------------------%
     % -------------------- INTERPRET USER INPUT ------------------------ %
     %--------------------------------------------------------------------%
-    
-%     if iscell(varargin)
-%         vararginCopy=varargin;
-%         for j=1:length(varargin);
-%            varargin{j}= vararginCopy{j};
-%         end
-%     end
 
     if length(varargin)==1
         %glitchy Matlab varagin thing, only an issue when this function 
@@ -62,30 +50,36 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     end
     %use NaN to store things which are not yet defined, as opposed to
     %empty (which is denoted [], and may be specified by the user):
-    stationaryPoints=NaN;
-    fSingularities=[]; %singularities in f, not g
-    Mf=1;
+    gStationaryPoints=NaN;
+    fSingularities=[]; fSingularitiesObj=[]; %singularities in f, not g
+    Mf=1; fTest=false;
+    interiorSingularities=[]; fSingularities=[];
     %check through optional inputs
     for j=1:length(varargin)
         if ischar(varargin{j})
            lowerCaseArg=lower(varargin{j});
            switch  lowerCaseArg
                case 'stationary points'
-                   stationaryPoints=varargin{j+1};
-                   if isempty(stationaryPoints)
-                       order=[];
+                   gStationaryPoints=varargin{j+1};
+                   if isempty(gStationaryPoints)
+                       gSPorders=[];
                    end
-               case 'singularities'
-                   fSingularities=varargin{j+1};
-               case 'poles'
-                   gPoles=varargin{j+1};
-                   if isempty(gPoles)
-                       poleOrder=[];
-                   end
-               case 'poles order'
-                   poleOrder=varargin{j+1};
+               case 'fsingularities'
+                   fSingularitiesObj=varargin{j+1};
+                    %check for singularities in (real) interior of integration range:
+                    for s=fSingularitiesObj
+                        if imag(s.position)==0
+                           if  a<s.position && s.position<b
+                               interiorSingularities=[interiorSingularities s.position];
+                           end
+                        else %keep hold of these for later, incase deformation crosses them
+                            fSingularities=[fSingularities s.position];
+                        end
+                    end
+               case 'gSingularities'
+                   gSingularities=varargin{j+1};
                case 'order'
-                   order=varargin{j+1};               
+                   gSPorders=varargin{j+1};               
                case 'mf' %upper bound of non-oscillatory f in complex plane
                    Mf=varargin{j+1};
                case 'ginv' %user has provided inverse of g(x)
@@ -97,6 +91,12 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                case 'visuals on'
                    visuals=true;
                    hold on;
+               case 'ftest' %not necessary, but user can input f, to find singularities etc
+                   fTest=true;
+                   F=varargin{j+1};
+                   if length(F) <2
+                       error('need f(x) and its derivative, in cell form');
+                   end
            end
        end
     end
@@ -106,13 +106,18 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     % -------------------------- SINGULARITIES ------------------------- %
     %--------------------------------------------------------------------%
     
-    %check for singularities in (real) interior of integration range:
-    interiorSingularities=[];
-    for s=fSingularities
-       if  a<s.position && s.position<b
-           interiorSingularities=[interiorSingularities s.position];
-       end
+    
+    %This one should work better, although the '2' is quite arbitrary.
+    rectRad=2*(b-a);
+    initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];
+        
+    %scan for singularities, if requested:
+    if analytic
+        fStationaryPoints=[]; fSingularities=[]; fSPorders=[];
+    elseif fTest
+        [fStationaryPoints, fSingularities, fSPorders, ~] = findZerosSingsRect( F{1}, F{2}, initRect, RectTol, N , visuals);
     end
+    
     
     %if there are any interior singularities, run iteratively with them at
     %the endpoint in each case
@@ -135,7 +140,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     % ------------------------ STAIONARY POINTS ------------------------ %
     %--------------------------------------------------------------------%
     
-    if isnan(stationaryPoints) %no stationary points specified by user
+    if isnan(gStationaryPoints) %no stationary points specified by user
         if ~analytic
            error('Can only detect stationary points of analytic phase functions'); 
         end
@@ -154,68 +159,58 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             %singularities / subtracting residues
         end
         
-        %construct a comlpex rectangle around [a,b], such that stationary points 
-        %outside of this region can be ignored:
-        %rectRad=rectSretch*abs(log((RectPerimThresh/Mf)^(1/freq)));
-        
-        %the thin rectangle approach failed, because my understanding of
-        %complex analysis was shite when it was concieved.
-        % key stationary points, outside of the rectangle, were being
-        % missed
-        %This one should work better, although the '2' is arbintrary.
-        rectRad=2*(b-a);
-        
-        %define the smallest rectangle containing the cylinder 
-        % U_{x\in[a,b]} B_r(x)
-        initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];
         %now find all stationary points inside of this rectangle
-        [stationaryPoints, gPoles, order, poleOrder] = findZerosSingsRect( G{2}, G{3}, initRect, RectTol, N , visuals);
+        [gStationaryPoints, gSingularities, gSPorders, ~] = findZerosSingsRect( G{2}, G{3}, initRect, RectTol, N , visuals);
     end
     
-    %now determine branch points
+    %now determine non-singular branch points
     branchPoints=[];
-    for j=1:length(order)
-        if ~isNearlyInt( order(j), intThresh )
-            branchPoints=[branchPoints stationaryPoints(j)];
+    allStationaryPoints=[gStationaryPoints fStationaryPoints];
+    allSPorders=[gSPorders fSPorders];
+    for j=1:length(allSPorders)
+        if ~isNearlyInt( allSPorders(j), intThresh )
+            branchPoints=[branchPoints allSPorders(j)];
         end
     end
-    for j=1:length(gPoles)
-        if ~isNearlyInt( poleOrder(j), intThresh )
-            branchPoints=[branchPoints gPoles(j)];
-        end
-    end
+%     for j=1:length(gSingularities)
+%         if ~isNearlyInt( gSingOrder(j), intThresh )
+%             branchPoints=[branchPoints gSingularities(j)];
+%         end
+%     end
     
     %THROW AWAY STATIONARY POINTS WHICH ARE ALONG A PATH OF ASCENT
-    copyStationaryPoints=stationaryPoints;
-    stationaryPoints=[];
-    copyOrder=order;
-    order=[];
-    spCount=0;
-    for j=1:length(copyStationaryPoints)
-       if exp(1i*G{1}(copyStationaryPoints(j))*freq )<wrongPathThresh %SD path decreases value of integrand
-           spCount=spCount+1;
-           stationaryPoints(spCount)=copyStationaryPoints(j);
-           order(spCount)=copyOrder(j);
-       end
-        %otherwise stationary point will not be on SD path, so can be
-        %ignored
-    end
+    %now this is fairly uneccessary, since the path is chosen wisely later,
+    %however this will speed things up a bit
+%     copyStationaryPoints=gStationaryPoints;
+%     gStationaryPoints=[];
+%     copyOrder=gSPorders;
+%     gSPorders=[];
+%     spCount=0;
+%     for j=1:length(copyStationaryPoints)
+%        if exp(1i*G{1}(copyStationaryPoints(j))*freq )<wrongPathThresh %SD path decreases value of integrand
+%            spCount=spCount+1;
+%            gStationaryPoints(spCount)=copyStationaryPoints(j);
+%            gSPorders(spCount)=copyOrder(j);
+%        end
+%         %otherwise stationary point will not be on SD path, so can be
+%         %ignored
+%     end
     
     %sort stationary points in order of real components:
     %stationaryPoints=sort(stationaryPoints,'ComparisonMethod','real');
     
-    numPaths=2*length(stationaryPoints);
-    startPath=[stationaryPoints stationaryPoints];
+    numPaths=2*length(gStationaryPoints);
+    startPath=[gStationaryPoints gStationaryPoints];
     startPath=sort(startPath,'ComparisonMethod','real');
-    pathPowers=round([order order]) + 1;
+    pathPowers=round([gSPorders gSPorders]) + 1;
     
     %now determine if a or b are at a stationary point
-    if isempty(stationaryPoints)
+    if isempty(gStationaryPoints)
         startPath=[a b];
         pathPowers=[1 1];
         numPaths=2;
     else
-        if min(abs(stationaryPoints-a))>RectTol
+        if min(abs(gStationaryPoints-a))>RectTol
             startPath=[a startPath];
             pathPowers=[1 pathPowers];
             numPaths=numPaths+1;
@@ -225,13 +220,13 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             pathPowers=pathPowers(2:end);
             numPaths=numPaths-1;
         end
-        if min(abs(stationaryPoints-b))>RectTol
+        if min(abs(gStationaryPoints-b))>RectTol
             startPath=[startPath b];
             pathPowers=[pathPowers 1];
             numPaths=numPaths+1;
         else
             %delete repeated path, and swap remaining one for endpoint a
-            startPath=[startPath(3:end) b];
+            startPath=[startPath(1:(end-2)) b];
             pathPowers=pathPowers(1:(end-1));
             numPaths=numPaths-1;
         end
@@ -298,16 +293,29 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %     %total number of paths:
 %     numPaths=length(realPoints);
     
+    %construct ICs now, as they're needed to determine which paths are
+    %finite:
+%     switch pathPowers(SDpath)
+%         case  1
+%             ICs=startPath(SDpath) ;
+%         case 2
+%             ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ) ];
+%         otherwise
+%             ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); zeros(pathPowers(SDpath)-2,1) ];
+%      end
+
+    [PathLengthsVec, PathLengthsMat] = finitePathTest( startPath, G , pathPowers);
+
     %initlaise matrix for path finding
     P=NaN(numPaths,2);
     
     %now loop over all paths:
     for SDpath=1:numPaths
-        try %ODE45 may fail to find certain paths, although these typically seem to be paths which we do not take
-            %change position of singularities with change of variables
-            COVsingularities=fSingularities;
-            for s=1:length(fSingularities)
-                COVsingularities(s).position=(fSingularities(s).position-startPath(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
+%         try %ODE45 may fail to find certain paths, although these typically seem to be paths which we do not take
+%             %change position of singularities with change of variables
+            COVsingularities=fSingularitiesObj;
+            for s=1:length(fSingularitiesObj)
+                COVsingularities(s).position=(fSingularitiesObj(s).position-startPath(SDpath))*(freq^(1/pathPowers(SDpath)))/1i;
                 %THIS MAP only works for real singularities
             end
 
@@ -353,32 +361,72 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             
             P(SDpath,1)=startPath(SDpath);
             P(SDpath,2)=X_{SDpath}(end);   
-        catch  %shall not be used, ODE45 failed
-            W_{SDpath}=[]; 
-            X_{SDpath}=NaN;
-            
-            P(SDpath,1)=NaN;
-            P(SDpath,2)=NaN;   
-        end
+%         catch  %shall not be used, ODE45 failed
+%             W_{SDpath}=[]; 
+%             X_{SDpath}=NaN;
+%             
+%             P(SDpath,1)=NaN;
+%             P(SDpath,2)=NaN;   
+%         end
                 
     end
     
-    %there is a difference between knowing the path, and walking the path%
+    %% there is a difference between knowing the path, and walking the path%
     try
         pathOrder=findFullPath( P, G{1}, freq, 1E-10, 25 );
     catch
         error('Could not find suitable SD path from a to b :-(');
     end
     
-    X=[];   W=[];
+    X=[];   W=[]; xv=[]; yv=[];
     inOut=1;
     for SDpath=pathOrder
         W=[W; inOut*W_{SDpath}];
         X=[X; X_{SDpath};];       
+        if inOut==1
+            xv=[ xv; real(X_{SDpath})];
+            yv=[yv; imag(X_{SDpath})];
+        else
+            xv=[ xv; real(flipud(X_{SDpath}))];
+            yv=[ yv; imag(flipud(X_{SDpath}))];            
+        end
         inOut=inOut*-1;
     end
     if visuals
-        plot(X,'kx');
+        for SDpath=pathOrder
+           plot(X_{SDpath},'x'); 
+        end
+        %plot(X,'kx','LineWidth',1.5);
+        %plot(xv,yv, 'r', 'LineWidth',2);
+        plot([a b],[0 0], 'b', 'LineWidth',2);
+        plot(fSingularities,'ro','LineWidth',2);
         hold off;
     end
+    
+    %for s=imagSingularities
+    [fin,fon] = inpolygon(real(fSingularities),imag(fSingularities),xv,yv);
+    %end
+    if max(fon)
+        error('f has singularity on SD path, risky business');
+    end
+    if max(fin)
+        %got some residues to compute. Choose the radius to be small enough
+        %that the integral will be non-oscillatory:
+        singRad=1/freq;
+        clear X_ W_;
+        for s=fSingularities(fin)
+            [X_, W_] = residueQuad( s,singRad, N );
+            X=[X; X_]; W=[W; W_.*exp(1i*freq*G{1}(X_))];
+        end
+    end
+    
+    %for s=imagSingularities
+    badPoints=[gSingularities branchPoints];
+    if ~isempty(badPoints)
+        [gin,gon] = inpolygon(real(badPoints),imag(badPoints),xv,yv);
+        if max(gin) || max(gon)
+            error('Singularity in g(z) or branch point in region of deformation');
+        end
+    end
+    
 end
