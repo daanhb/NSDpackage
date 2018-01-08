@@ -43,10 +43,11 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     % -------------------- INTERPRET USER INPUT ------------------------ %
     %--------------------------------------------------------------------%
 
-    if length(varargin)==1
+    if length(varargin)==1 && ~ischar(varargin{1})
         %glitchy Matlab varagin thing, only an issue when this function 
         %call's it's self recursively. Fix it here:
         varargin=varargin{1};
+        %MESSES UP WHEN YOU SEND MATLAB ONLY ONE OPTION, DUH
     end
     %use NaN to store things which are not yet defined, as opposed to
     %empty (which is denoted [], and may be specified by the user):
@@ -290,21 +291,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         G = finishDerivs( G, max(pathPowers)+1, N, RectTol );
     end
     
-%     %total number of paths:
-%     numPaths=length(realPoints);
-    
-    %construct ICs now, as they're needed to determine which paths are
-    %finite:
-%     switch pathPowers(SDpath)
-%         case  1
-%             ICs=startPath(SDpath) ;
-%         case 2
-%             ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ) ];
-%         otherwise
-%             ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); zeros(pathPowers(SDpath)-2,1) ];
-%      end
-
-    [PathLengthsVec, PathLengthsMat] = finitePathTest( startPath, G , pathPowers);
+    [PathLengthsVec, ~] = finitePathTest( startPath, G , pathPowers);
 
     %initlaise matrix for path finding
     P=NaN(numPaths,2);
