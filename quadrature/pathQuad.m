@@ -46,6 +46,22 @@ p_max=10;   GradDelta=.15;
                 error('Have only coded for functions with single singularities');
             end
         end
+    elseif a==0 && b<inf
+        %split paths in two?
+        error('Should use pathQuadFinite.m for this');
+        if ~isempty(S)
+            error('Havent coded Generalised Truncated Gauss-Hermite/Freud,  and I dont intend to anytime soon.');
+        end
+%         [ x, w_preExp ] =  quad_gauss(N, 0, b);
+%         w=w_preExp.*exp(-freq*)
+        %after chatting with Daan, have decided to use standard Gauss
+        %(above) rather than truncated Hermite/Frued (below)
+%         if m==2
+%             [ x, w ] = GaussHermiteTrunc( N, b );
+%         else
+%             [ x, w ] = GaussFreudTrunc( N, b, m);
+%         end
+        
     end
 
 end

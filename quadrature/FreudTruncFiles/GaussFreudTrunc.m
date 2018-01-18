@@ -1,4 +1,4 @@
-function [ x, w ] = GaussFreudTrunc( N,b ,p)
+function [ x, w ] = GaussFreudTrunc( N, b, p)
 %returns N weights and nodes for integral:
     % \int_0^b f(x)exp(-x^2) dx
     

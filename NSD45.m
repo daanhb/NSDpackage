@@ -200,7 +200,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %sort stationary points in order of real components:
     %stationaryPoints=sort(stationaryPoints,'ComparisonMethod','real');
     
-    numPaths=2*length(gStationaryPoints);
+    numPathsSD=2*length(gStationaryPoints);
     startPath=[gStationaryPoints gStationaryPoints];
     startPath=sort(startPath,'ComparisonMethod','real');
     pathPowers=round([gSPorders gSPorders]) + 1;
@@ -209,27 +209,27 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     if isempty(gStationaryPoints)
         startPath=[a b];
         pathPowers=[1 1];
-        numPaths=2;
+        numPathsSD=2;
     else
         if min(abs(gStationaryPoints-a))>RectTol
             startPath=[a startPath];
             pathPowers=[1 pathPowers];
-            numPaths=numPaths+1;
+            numPathsSD=numPathsSD+1;
         else
             %delete repeated path, and swap remaining one for endpoint a
             startPath=[a startPath(3:end)];
             pathPowers=pathPowers(2:end);
-            numPaths=numPaths-1;
+            numPathsSD=numPathsSD-1;
         end
         if min(abs(gStationaryPoints-b))>RectTol
             startPath=[startPath b];
             pathPowers=[pathPowers 1];
-            numPaths=numPaths+1;
+            numPathsSD=numPathsSD+1;
         else
             %delete repeated path, and swap remaining one for endpoint a
             startPath=[startPath(1:(end-2)) b];
             pathPowers=pathPowers(1:(end-1));
-            numPaths=numPaths-1;
+            numPathsSD=numPathsSD-1;
         end
     end
     
@@ -291,13 +291,46 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         G = finishDerivs( G, max(pathPowers)+1, N, RectTol );
     end
     
-    [PathLengthsVec, ~] = finitePathTest( startPath, G , pathPowers);
+    [prePathLengthsVec, pathEndPoint, finitePathPowers, ~] = finitePathTest( startPath, G , pathPowers);
 
     %initlaise matrix for path finding
-    P=NaN(numPaths,2);
+    P=NaN(numPathsSD,2);
+    
+    %------now do a load of bodging for the finite path stuff------%
+    % CREATE #SA here, equal to number of finite paths
+    numPathsSA=sum(prePathLengthsVec<inf);
+    numPaths=numPathsSD+numPathsSA;
+    
+    %now bolt the finite path powers on the end
+    endPowers=finitePathPowers(:,2).';
+    endPowers=endPowers(~isnan(endPowers));
+    pathPowers=[pathPowers endPowers];
+    
+    %now split the finite path lengths in half
+    for j=1:length(prePathLengthsVec)
+        if prePathLengthsVec(j)<inf
+            prePathLengthsVec(end+1)=prePathLengthsVec(j)/2;
+            prePathLengthsVec(j)=prePathLengthsVec(j)/2;
+        end
+    end
+    %PERHAPS DOESN'T NEED TO BE SPLIT IN HALF, could be something else
+    
+    %and the start points
+    startPath=[startPath pathEndPoint(~isnan(pathEndPoint))];
+    
+    %--- end of finite path bodging ---------------------------------%
     
     %now loop over all paths:
     for SDpath=1:numPaths
+        
+          %do steepest descent paths first, then bolt the ascent paths (if
+          %there are any) on at the end
+          if SDpath>numPathsSD
+              ascFlag=true;
+          else
+              ascFlag=false;
+          end
+          
 %         try %ODE45 may fail to find certain paths, although these typically seem to be paths which we do not take
 %             %change position of singularities with change of variables
             COVsingularities=fSingularitiesObj;
@@ -307,8 +340,15 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             end
 
             %get weights and nodes
-            [x{SDpath}, w{SDpath}]=pathQuad( 0, inf, pathPowers(SDpath), COVsingularities, N );
-            P0=[0; (x{SDpath}./(freq^(1/pathPowers(SDpath))))];
+            if isinf(prePathLengthsVec(SDpath))
+                %[x{SDpath}, w{SDpath}]=pathQuad( 0, (prePathLengthsVec(SDpath)/2)^(1/pathPowers(SDpath)), pathPowers(SDpath), COVsingularities, N );
+                [x{SDpath}, w{SDpath}]=pathQuad( 0, inf, pathPowers(SDpath), COVsingularities, N );
+                P0=[0; (x{SDpath}./(freq^(1/pathPowers(SDpath))))];
+            else %finite path
+                [x{SDpath}, w{SDpath}] = pathQuadFinite( prePathLengthsVec(SDpath), pathPowers(SDpath), COVsingularities, freq, N );
+                P0=[0; x{SDpath}];
+            end
+            %THE FACTOR OF A HALF FOR THE FINITE PATHS IS QUITE ARBITRARY
 
             %set ICs for SD path differential equation, which will determine SD
             %path:
@@ -316,13 +356,13 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                 case  1
                     ICs=startPath(SDpath) ;
                 case 2
-                    ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ) ];
+                    ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath), ascFlag ) ];
                 otherwise
-                    ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath)  ); zeros(pathPowers(SDpath)-2,1) ];
+                    ICs=[ startPath(SDpath); NSDpathICv2( pathPowers(SDpath), (-1)^(SDpath+1), G,  startPath(SDpath), ascFlag ); zeros(pathPowers(SDpath)-2,1) ];
             end
 
             %now solve IVP:
-            [~,H] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(SDpath)-1,G, ICs), P0, ICs, odeset('RelTol',RelTol) );
+            [~,H] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(SDpath)-1,G, ICs, ascFlag), P0, ICs, odeset('RelTol',RelTol) );
     %         warnODE45 = warning('query','last');
     %         if 
 
@@ -337,12 +377,16 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             else
                 %re-insert h(p) into DE for h'(p)*
                 h{SDpath}=H(2:end);
-                dhdp{SDpath}=1i./G{2}(H(2:end));
+                dhdp{SDpath}=1i./G{2}(H(2:end)); %this is the DE for 
             end
 
             %absorb h'(p) and other constants into weights, also negate paths
             %incoming from infinity
-            W_{SDpath}=(1/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*G{1}(startPath(SDpath))).*dhdp{SDpath}.*w{SDpath};
+            if isinf(prePathLengthsVec(SDpath))
+                W_{SDpath}=(1/(freq^(1/pathPowers(SDpath))))*exp(1i*freq*G{1}(startPath(SDpath))).*dhdp{SDpath}.*w{SDpath};
+            else
+                W_{SDpath}=dhdp{SDpath}.*w{SDpath};
+            end
 
             X_{SDpath}=h{SDpath}; 
             
@@ -360,7 +404,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     %% there is a difference between knowing the path, and walking the path%
     try
-        pathOrder=findFullPath( P, G{1}, freq, 1E-10, 25 );
+        pathOrder=findFullPath( P, G{1}, freq, 1E-10, N, numPathsSD );
     catch
         error('Could not find suitable SD path from a to b :-(');
     end
@@ -391,19 +435,21 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     end
     
     %for s=imagSingularities
-    [fin,fon] = inpolygon(real(fSingularities),imag(fSingularities),xv,yv);
-    %end
-    if max(fon)
-        error('f has singularity on SD path, risky business');
-    end
-    if max(fin)
-        %got some residues to compute. Choose the radius to be small enough
-        %that the integral will be non-oscillatory:
-        singRad=1/freq;
-        clear X_ W_;
-        for s=fSingularities(fin)
-            [X_, W_] = residueQuad( s,singRad, N );
-            X=[X; X_]; W=[W; W_.*exp(1i*freq*G{1}(X_))];
+    if ~isempty(fSingularities)
+            [fin,fon] = inpolygon(real(fSingularities),imag(fSingularities),xv,yv);
+        %end
+        if max(fon)
+            error('f has singularity on SD path, risky business');
+        end
+        if max(fin)
+            %got some residues to compute. Choose the radius to be small enough
+            %that the integral will be non-oscillatory:
+            singRad=1/freq;
+            clear X_ W_;
+            for s=fSingularities(fin)
+                [X_, W_] = residueQuad( s,singRad, N );
+                X=[X; X_]; W=[W; W_.*exp(1i*freq*G{1}(X_))];
+            end
         end
     end
     

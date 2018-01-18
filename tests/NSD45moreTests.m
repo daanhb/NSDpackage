@@ -15,7 +15,7 @@ clear; clc;
 Npts=25;
 Nbruce=150;
 
-freqs=[150 10000 100000];
+freqs=[100 10000 100000];
 
 F={@(z) ones( size(z)), @(z) 1./(z-.2i),  @(z) z.^2,  @(z) log(z+1)};
 Fsingularities={[],singularity(1,0.2i,'?','point'),[], singularity(1, -1, 'log', 'point'), [], []};

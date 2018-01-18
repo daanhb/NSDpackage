@@ -1,12 +1,12 @@
-function path = findFullPath( P, g,  freq, thresh, Npts )
+function path = findFullPath( P, g,  freq, thresh, Npts, m )
 %looks at start and 'end' points of each SD path computed, and finds the
 %shortest path from a to b
 
     % init adjacency matrix:
-    [m, n]=size(P);
-    if n~=2
-        error('Matrix of start/end points must by Nx2');
-    end
+%     [m, n]=size(P);
+%     if n~=2
+%         error('Matrix of start/end points must by Nx2');
+%     end
 
     A=eye(m);
 

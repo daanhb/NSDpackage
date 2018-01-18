@@ -1,4 +1,4 @@
-function [P, A] = finitePathTest( SPs, G, pathPowers, thresh )
+function [P, endPoint, finitePathPowers, A] = finitePathTest( SPs, G, pathPowers, thresh )
 %function takes in stationary points as 'SPs' and returns matrix of path
 %lengths, if finite
 
@@ -7,6 +7,10 @@ function [P, A] = finitePathTest( SPs, G, pathPowers, thresh )
     end
     N=length(SPs);
     P=inf(N,1);
+    finitePathStart=false(N,1);
+    finitePathEnd=false(N,1);
+    endPoint=NaN(N,1);
+    finitePathPowers=NaN(N,2);
     g=G{1};
 %     Dg=G{2};
     %approximate h_\sigma'(0+small)
@@ -32,6 +36,11 @@ function [P, A] = finitePathTest( SPs, G, pathPowers, thresh )
         for m=1:N
            if A(m,n)<P(n) && 0<A(m,n)
                 P(n)=A(m,n);
+                finitePathStart(n)=true;
+                finitePathEnd(m)=true;
+                endPoint(n)=SPs(m);
+                finitePathPowers(n,1)=pathPowers(n);
+                finitePathPowers(n,2)=pathPowers(m);
            end
         end
     end
