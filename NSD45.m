@@ -316,7 +316,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %PERHAPS DOESN'T NEED TO BE SPLIT IN HALF, could be something else
     
     %and the start points
-    startPath=[startPath pathEndPoint(~isnan(pathEndPoint))];
+    startPath=[startPath pathEndPoint(~isnan(pathEndPoint)).'];
     
     %--- end of finite path bodging ---------------------------------%
     

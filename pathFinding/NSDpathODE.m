@@ -13,7 +13,7 @@ function dHdp = NSDpathODE(p,h,n,g,ICs,ascFlag)
     end
     pSmallThresh=1E-12;
     if n==0
-         dHdp =  1i./g{2}(h); 
+         dHdp =  AscDescDir*1i./g{2}(h); 
     elseif p>pSmallThresh
         switch n
             case 1

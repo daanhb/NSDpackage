@@ -2,6 +2,10 @@ Short term:
 When [a,b]=[-10,10], endpoint SD paths don't appear to get created correctly.
 a or b complex causes errors
 
+med term:
+-Change adjaceny matrix approach to a cost-function type approach to find SD path
+-Rather than two standard Gaussian splits for finite paths, more involved parametrisation can cover both. This also avoids the bodge in the finite path detection algorithm.
+
 Long term:
 -1. Detect poles in complex plane
 -2. Allow phase g(x) to be complex, or have singularities/poles
