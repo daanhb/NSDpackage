@@ -4,7 +4,7 @@ a or b complex causes errors
 
 med term:
 -Change adjaceny matrix approach to a cost-function type approach to find SD path
--Rather than two Gaussian splits for finite paths, more involved parametrisation can cover both
+-Rather than two standard Gaussian splits for finite paths, more involved parametrisation can cover both. This also avoids the bodge in the finite path detection algorithm.
 
 Long term:
 -1. Detect poles in complex plane
