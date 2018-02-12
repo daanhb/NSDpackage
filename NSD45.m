@@ -109,7 +109,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     
     %This one should work better, although the '2' is quite arbitrary.
-    rectRad=2*(b-a);
+    rectRad=.5*(b-a);
     initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];
         
     %scan for singularities, if requested:
@@ -404,7 +404,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     %% there is a difference between knowing the path, and walking the path%
     try
-        pathOrder=findFullPath( P, G{1}, freq, 1E-10, N, numPathsSD );
+        pathOrder=findCheapestPath( P, G{1}, freq, N, numPathsSD );%findFullPath( P, G{1}, freq, 1E-10, N, numPathsSD );
     catch
         error('Could not find suitable SD path from a to b :-(');
     end
