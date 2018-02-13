@@ -37,7 +37,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         
     %flag for plotting stuff as we go
         visuals=false;
-        analytic=false;
+        analytic=true;
     
     %% ------------------------------------------------------------------%
     % -------------------- INTERPRET USER INPUT ------------------------ %
@@ -109,7 +109,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     
     %This one should work better, although the '2' is quite arbitrary.
-    rectRad=.5*(b-a);
+    rectRad=.75*(b-a);
     initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];
         
     %scan for singularities, if requested:
@@ -403,11 +403,15 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     end
     
     %% there is a difference between knowing the path, and walking the path%
-    try
-        pathOrder=findCheapestPath( P, G{1}, freq, N, numPathsSD );%findFullPath( P, G{1}, freq, 1E-10, N, numPathsSD );
-    catch
-        error('Could not find suitable SD path from a to b :-(');
-    end
+    %try
+        [pathOrder, pathCost]=findCheapestPath( P, G{1}, freq, N, numPathsSD );%findFullPath( P, G{1}, freq, 1E-10, N, numPathsSD );
+        
+        if pathCost>1
+            warning('Cost of truncating SD path seems quite high, may not be optimal path');
+        end
+%     catch
+%         error('Could not find suitable SD path from a to b :-(');
+%     end
     
     X=[];   W=[]; xv=[]; yv=[];
     inOut=1;
@@ -424,8 +428,12 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         inOut=inOut*-1;
     end
     if visuals
-        for SDpath=pathOrder
-           plot(X_{SDpath},'x'); 
+        for SDpath=1:numPaths
+            if ismember(SDpath,pathOrder)
+                plot(X_{SDpath},'xm'); 
+            else
+                plot(X_{SDpath},'oc'); 
+            end
         end
         %plot(X,'kx','LineWidth',1.5);
         %plot(xv,yv, 'r', 'LineWidth',2);

@@ -19,9 +19,9 @@ function thePath = NSDpathICv2( r, InOut, G, SP, ascFlag )
     
     if AscDescDir==1
         if InOut==1
-            somePaths=allPaths(real(allPaths)>0);
+            somePaths=allPaths(real(allPaths)>=0);
         else
-            somePaths=allPaths(real(allPaths)<0);
+            somePaths=allPaths(real(allPaths)<=0);
         end
         %somePaths=allPaths;
     else

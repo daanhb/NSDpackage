@@ -7,15 +7,16 @@ function [path, cost] = findCheapestPath( P, g,  freq, Npts, m )
     for j=1:m
        for ell=(j+1):m
            if P(j,1)==P(ell,1) %start points are the same
-              A(ell,j)=0;
-           else  %endpoints are essentially the same
-              A(ell,j)=pathCost(P(j,2),P(ell,2), g,  freq, Npts);               
-              A(j,ell)=A(ell,j); %symmetric obvz
-           end
+              A(ell,j)=1E-255; %need this bodge - matlab only connects non-zero entries
+           else  %endpoints are possibly 'connected'
+              A(ell,j)=pathCost(P(j,2),P(ell,2), g,  freq, Npts);  
+           end             
+           A(j,ell)=A(ell,j); %symmetric obvz
        end
     end
     
     %now compute shortest (cheapest) path from a to b
-    [cost,path]=dijkstra(A,m,1);
+    G = graph(A.','upper');
+    [path, cost] =shortestpath(G,1,m);
     
 end

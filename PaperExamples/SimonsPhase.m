@@ -1,7 +1,7 @@
 clear classes;
 syms x f g;
 
-N_Q_set=[2 4 8 16];
+N_Q_set=[ 8 16];
 omega_set=10.^[1 2 4 6];
 
 %symbolic functions:
