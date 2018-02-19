@@ -16,20 +16,18 @@ function isZero = isZeroOnLine( a,b,F, lineLength )
     
     if ~id0Real && ~id0Complex
         [X,Y] = meshgrid(realZeros,imagZeros);
-        zeroDists = min(min(abs(X-Y)));
         if min(min(zeroDists)) < thresh
             isZero = true;
         else
             isZero = false;
         end
+        zeroDists = min(min(abs(X-Y)));
     elseif ~id0Real && ~isempty(realZeros)
-        isZero = true;
+        
     elseif ~id0Complex && ~isempty(imagZeros)
-        isZero = true;
-    elseif id0Complex && id0Real
+        
+        elsei
         error('Function seems to be identically zero');
-    else
-        isZero = false;
     end
     
 end

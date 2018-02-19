@@ -67,89 +67,79 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
             bisectRatio=.5+.5*(rand-.5);% in (.25,.75)
         end
         
-        %plot the new rectangles
-        if visuals
-            plotRects( newRectA, newRectB );
-        end
-                
         %count the number of zeros in each subdivision:
         countOutA = countZerosRect( f, df, newRectA, N, 2 );
-        Acount = round(countOutA(1)); Apos=countOutA(2);
+        Acount = countOutA(1); Apos=countOutA(2);
         countOutB = countZerosRect( f, df, newRectB, N, 2 );
-        Bcount = round(countOutB(1)); Bpos=countOutB(2);
+        Bcount = countOutB(1); Bpos=countOutB(2);
         
-        if Acount>0 && Bcount>0
+        if abs(Acount)>intThresh && abs(Bcount)>intThresh
             %call self recursively over each sub-tangle, until zeros are
             %located
             [allZerosA, ordersA] = findZerosRect( f, df, newRectA, thresh, N );
             [allZerosB, ordersB] = findZerosRect( f, df, newRectB, thresh, N );
-            allZeros = [allZerosA allZerosB];
-            orders=round([ordersA ordersB]);
+            allzeros = [allZerosA allZerosB];
+            orders=[ordersA ordersB];
             
             return;
-        elseif Acount>0
+        elseif abs(Acount)>intThresh
             %first check if this is the only zero
             if Acount==1
                 allZeros=Apos;
                 orders=1;
-%                 if visuals
-%                     plotRects( newRectA, newRectB );
-%                 end
                 return
             else
                 %guess at the weighted average, if there's only one
                 %stationary point in this rect, this is where it'll be
                 maybeCentreA = Apos/Acount;
                 focusRectA = [maybeCentreA-thresh-thresh*1i  maybeCentreA+thresh-thresh*1i  maybeCentreA+thresh+thresh*1i  maybeCentreA-thresh+thresh*1i];
-                focusAcount = round(countZerosRect( f, df, focusRectA, N ));
+                focusAcount = countZerosRect( f, df, focusRectA, N );
                 if focusAcount==Acount
                     allZeros=mean(focusRectA);
                     orders=Acount;
-%                     if visuals
-%                         plotRects( focusRectA );
-%                     end
+                    if visuals
+                        plotRects( focusRectA );
+                    end
                     return;
                 end
             end
             rect=newRectA;
-        elseif Bcount>0
+        elseif abs(Bcount)>intThresh
              if Bcount==1
                 allZeros=Bpos;
                 orders=1;
-%                 if visuals
-%                     plotRects( newRectA, newRectB );
-%                 end
                 return
              else
                 %guess at the weighted average, if there's only one
                 %stationary point in this rect, this is where it'll be
                 maybeCentreB = Bpos/Bcount;
                 focusRectB = [maybeCentreB-thresh-thresh*1i  maybeCentreB+thresh-thresh*1i  maybeCentreB+thresh+thresh*1i  maybeCentreB-thresh+thresh*1i];
-                focusBcount = round(countZerosRect( f, df, focusRectB, N ));
+                focusBcount = countZerosRect( f, df, focusRectB, N );
                 if focusBcount==Bcount
                     allZeros=mean( focusRectB );
                     orders=Bcount;
-%                     if visuals
-%                         plotRects( focusRectB );
-%                     end
+                    if visuals
+                        plotRects( focusRectB );
+                    end
                     return;
                 end
             end
             rect=newRectB;
-        elseif Acount==0 && Bcount==0
+        elseif abs(Acount)>0 && abs(Bcount)>0
             allZeros=[];
-            orders=[];
             break
         end
         
         height=max(imag(rect))-min(imag(rect));
         width=max(real(rect))-min(real(rect));
-         
-%         if visuals
-%             plotRects( newRectA, newRectB );
-%         end
+        
+        if visuals
+            plotRects( newRectA, newRectB );
+        end
         allZeros=mean(rect);
         
     end
+    
+    
     
 end
