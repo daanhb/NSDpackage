@@ -50,7 +50,7 @@ p_max=10;   GradDelta=.15;
         %split paths in two?
         error('Should use pathQuadFinite.m for this');
         if ~isempty(S)
-            error('Havent coded Generalised Truncated Gauss-Hermite/Freud,  and I dont intend to anytime soon.');
+            error('Havent coded Generalised Truncated Gauss-Hermite/Freud');
         end
 %         [ x, w_preExp ] =  quad_gauss(N, 0, b);
 %         w=w_preExp.*exp(-freq*)

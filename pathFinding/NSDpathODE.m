@@ -14,15 +14,12 @@ function dHdp = NSDpathODE(p,h,n,g,ICs,ascFlag)
     pSmallThresh=1E-12;
     if n==0
          dHdp =  AscDescDir*1i./g{2}(h); 
-    elseif p>pSmallThresh
+    elseif p>pSmallThresh && abs(g{2}(h(1)))>pSmallThresh
         switch n
             case 1
                 dHdp = [h(2); (AscDescDir*2i-h(2).^2.*(g{3}(h(1))))./g{2}(h(1))]; 
                 % H=[h,h']
 
-                %not sure if this longer equation is necessary... could instead
-                %just try writing:
-                %dHdp=1i*r*p^(r-1)./g{2}(h) for a general ODE
             case 2
                 dHdp = [h(2); h(3); (AscDescDir*6i-h(2).^3.*(g{4}(h(1)))-3*g{3}(h(1)).*h(2).*h(3))./g{2}(h(1))];
                 % H=[h,h',h'']
@@ -32,5 +29,11 @@ function dHdp = NSDpathODE(p,h,n,g,ICs,ascFlag)
     else
         %very small p, can get unstable... so approximate Taylor style:
         dHdp = [ICs(2); zeros(n,1)];
+%         switch n 
+%             case 1
+%                 [AscDescDir*2i/(g{3}*ICs(1)*ICs(2))];
+%             case 2
+%                 [h(2); h(3); (AscDescDir*6i-h(2).^3.*(g{4}(h(1)))-3*g{3}(h(1)).*h(2).*h(3))./(g{3}())];
+%         end
     end
 end

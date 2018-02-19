@@ -1,4 +1,4 @@
-function [path, cost] = findCheapestPath( P, g,  freq, Npts, m )
+function [path, cost] = findCheapestPath( P, g,  freq, Npts, m, pathPowers)
 %looks at start and 'end' points of each SD path computed, and finds the
 %shortest path from a to b
 
@@ -17,6 +17,16 @@ function [path, cost] = findCheapestPath( P, g,  freq, Npts, m )
     
     %now compute shortest (cheapest) path from a to b
     G = graph(A.','upper');
-    [path, cost] =shortestpath(G,1,m);
+    
+    cost=inf;
+    for startPath=1:pathPowers(1)
+        for endPath=(m-pathPowers(end)+1):m
+            [path_, cost_] =shortestpath(G,1,m);
+            if cost_<cost
+                path=path_;
+                cost=cost_;
+            end
+        end
+    end
     
 end

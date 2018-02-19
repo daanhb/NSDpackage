@@ -62,8 +62,8 @@ function allZeros = findZerosRect( f, df, rectIn, thresh, N )
         end
         
         %count the number of zeros in each subdivision:
-        Acount=countZerosRect( f, df, newRectA, N );
-        Bcount=countZerosRect( f, df, newRectB, N );
+        [Acount, Apos]=countZerosRect( f, df, newRectA, N, 2 );
+        [Bcount, Bpos]=countZerosRect( f, df, newRectB, N, 2 );
         
         if Acount>0 && Bcount>0
             %call self recursively over each sub-tangle, until zeros are
@@ -71,6 +71,14 @@ function allZeros = findZerosRect( f, df, rectIn, thresh, N )
             allZeros=[findZerosRect( f, df, newRectA, thresh, N )  findZerosRect( f, df, newRectB, thresh, N )];
             return;
         elseif Acount>0
+            %first check if this is the only zero
+            if Acount==1
+                allzeros=mean(rect);
+                return
+            else
+                focusRectA
+                focusAcount=countZerosRect( f, df, focusRectA, N );
+            end
             rect=newRectA;
         elseif Bcount>0
             rect=newRectB;
