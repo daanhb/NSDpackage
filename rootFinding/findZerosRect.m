@@ -4,6 +4,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
 %N is number of points per unit length of rectangle
 %thresh is the width of the rectangle which we pinpoint the zeros to
 
+    randScale=0.5; %needs to be sufficiently bigger than thresh2 of isZeroOnLine
     if nargin<=4
         N=15;
     end
@@ -26,20 +27,28 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
     %first check if zeros lie on edge of rectangle
     %...
     fullRectIn=[rectIn rectIn(1)];
+    zeroOnLine=false;
     for j=1:4
-%         Redge=linspace(fullRectIn(j),fullRectIn(j+1),Nedge);
-%         [minVal, minInd]=min(abs(f(Redge)));
-        zeroOnLine=isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f );
-        if zeroOnLine
-            %retry with a larger rectangle
-            newRect=mean(rectIn) + (1+rand/10)*[-width-1i*height  width-1i*height  width+1i*height  -width+1i*height]/2;
-            %THE ABOVE IS DODGY, IT ASSUMES THAT VERTICES ARE INPUT IN
-            %CERTAIN ORDER
-            [allZeros, orders] = findZerosRect( f, df, newRect, thresh, N );
-            return;
+        zeroOnLine=max(zeroOnLine,isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f ));
+    end
+    failCount=0;
+    while zeroOnLine
+        if failCount>10
+            error('Keep failing to find a line without any zeros');
         end
+        %retry with a larger rectangle
+        newRect=mean(rectIn) + (1+rand*randScale)*[-width-1i*height  width-1i*height  width+1i*height  -width+1i*height]/2;
+        %[allZeros, orders] = findZerosRect( f, df, newRect, thresh, N );
+        fullRectIn=[rectIn rectIn(1)];  
+        zeroOnLine=false;
+        for j=1:4
+            zeroOnLine=max(zeroOnLine,isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f ));
+        end
+        failCount=failCount+1;
     end
 %     
+    fprintf('\t%d\n',failCount);
+        
     allZeros=rand+rand*1i;
     rect=rectIn;
     
@@ -49,8 +58,12 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
 
         bisectRatio=.5; %start by bisecting in the middle
         
-        zeroOnLine=true; %this value keeps choosing new bisection point until bisection line doesn't land on a zero
+        zeroOnLine = true; %this value keeps choosing new bisection point until bisection line doesn't land on a zero
+        failCount=0;
         while zeroOnLine
+            if failCount>10
+                error('Keep failing to find a line without any zeros');
+            end
             if width>height
                 %take bototm left corner, and add half (width) rectangle to it
                 newRectA=BLcorner + [0  bisectRatio*width  (bisectRatio*width+1i*height)  1i*height];
@@ -64,9 +77,10 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
             end
 %             
             zeroOnLine=isZeroOnLine( bisectingLine(1), bisectingLine(2), f );
-            bisectRatio=.5+.5*(rand-.5);% in (.25,.75)
+            bisectRatio=.5+randScale*.5*(rand-.5);% in randScale*(.25,.75)
+            failCount=failCount+1;
         end
-        
+        fprintf('\t%d\n',failCount);
         %plot the new rectangles
         if visuals
             plotRects( newRectA, newRectB );
@@ -81,8 +95,8 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
         if Acount>0 && Bcount>0
             %call self recursively over each sub-tangle, until zeros are
             %located
-            [allZerosA, ordersA] = findZerosRect( f, df, newRectA, thresh, N );
-            [allZerosB, ordersB] = findZerosRect( f, df, newRectB, thresh, N );
+            [allZerosA, ordersA] = findZerosRect( f, df, newRectA, thresh, N, visuals );
+            [allZerosB, ordersB] = findZerosRect( f, df, newRectB, thresh, N, visuals );
             allZeros = [allZerosA allZerosB];
             orders=round([ordersA ordersB]);
             
@@ -92,9 +106,6 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
             if Acount==1
                 allZeros=Apos;
                 orders=1;
-%                 if visuals
-%                     plotRects( newRectA, newRectB );
-%                 end
                 return
             else
                 %guess at the weighted average, if there's only one
@@ -105,9 +116,6 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
                 if focusAcount==Acount
                     allZeros=mean(focusRectA);
                     orders=Acount;
-%                     if visuals
-%                         plotRects( focusRectA );
-%                     end
                     return;
                 end
             end
@@ -116,9 +124,6 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
              if Bcount==1
                 allZeros=Bpos;
                 orders=1;
-%                 if visuals
-%                     plotRects( newRectA, newRectB );
-%                 end
                 return
              else
                 %guess at the weighted average, if there's only one
@@ -129,9 +134,6 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
                 if focusBcount==Bcount
                     allZeros=mean( focusRectB );
                     orders=Bcount;
-%                     if visuals
-%                         plotRects( focusRectB );
-%                     end
                     return;
                 end
             end
@@ -145,9 +147,6 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
         height=max(imag(rect))-min(imag(rect));
         width=max(real(rect))-min(real(rect));
          
-%         if visuals
-%             plotRects( newRectA, newRectB );
-%         end
         allZeros=mean(rect);
         
     end

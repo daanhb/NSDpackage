@@ -27,7 +27,7 @@ function [X, W] = choosePath(a,b,P, G, freq, N, numPathsSD, pathPowers, visuals,
                 plot(X_{fullIndex},'oc'); 
             end
         end
-        plot([a b],[0 0], 'b', 'LineWidth',2);
+        %plot([a b],[0 0], 'b', 'LineWidth',2);
     end
     
 end

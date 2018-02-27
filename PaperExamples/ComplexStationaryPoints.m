@@ -2,7 +2,7 @@ clear classes;
 syms x f g;
 
 N_Q_set=[4];
-omega_set=10.^[2];
+omega_set=10.^[1:3];
 
 %symbolic functions:
 %g = symfun(.5*x^2-.5i*x, x); %has stationary points at +i,-i
@@ -22,7 +22,8 @@ for N_Q=N_Q_set
         I=int(f(x)*exp(1i*omega*g(x)),-1,1);
         [z,w] = NSD45( -1, 1, omega, N_Q, G, 'analytic', true, 'visuals on');
         Q=sum(w);
-        R(omegaCount,Qcount)=abs(Q-vpa(I));
+        R(omegaCount,Qcount)=abs(Q-vpa(I,16))/abs(vpa(I,16));
+        fprintf('New problem\n');
     end
 end
-log10(R)
+(log10(R))

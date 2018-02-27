@@ -1,7 +1,7 @@
 function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStationaryPoints(a,b,rectRad,...
                                                                      analytic, G, RectTol, N , visuals)
     %This one should work better, although the '2' is quite arbitrary.
-    Nrect=15;
+    Nrect=30;
     if isempty(rectRad)
         rectRad=.75*(b-a);
     end

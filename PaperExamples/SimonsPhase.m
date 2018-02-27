@@ -1,8 +1,8 @@
 clear classes;
 syms x f g;
 
-N_Q_set=[ 8 16];
-omega_set=10.^[1 2 4 6];
+N_Q_set=[ 4];
+omega_set=10.^[2 4 6];
 
 %symbolic functions:
 g = symfun((x+1).^-1, x);

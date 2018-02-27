@@ -139,8 +139,6 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     % ---------------- STAIONARY and CCRITICAL POINTS ------------------ %
     %--------------------------------------------------------------------%
     
-    % ***** should make a seperate version for when g is analytic, can converge
-    %much faster
     if isnan(gStationaryPoints) %no stationary points specified by user
         [gStationaryPoints, gSingularities, gSPorders,~] = getStationaryPoints(a,b,rectRad,...
                                                             gAnalytic, G, RectTol, N , visuals);
@@ -246,10 +244,12 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %% there is a difference between knowing the path, and walking the path%
     [X, W] = choosePath(a,b,P, G, freq, N, numPathsSD, pathPowers, visuals, X_, W_);
     
-    %add tiny circles around singular points if they lie inside the region
-    %of deformation:
-    [XsmallDisk, WsmallDisk] = handleSingularities(fSingularities, gSingularities, branchPoints, freq, G, N, visuals);
-    X=[X; XsmallDisk];  W=[W; WsmallDisk];
+    if ~gAnalytic || ~isempty(fSingularities)
+        %add tiny circles around singular points if they lie inside the region
+        %of deformation:
+        [XsmallDisk, WsmallDisk] = handleSingularities(fSingularities, gSingularities, branchPoints, freq, G, N, visuals);
+        X=[X; XsmallDisk];  W=[W; WsmallDisk];
+    end
     
     %stop adding stuff to the lovely diagram
     if visuals
