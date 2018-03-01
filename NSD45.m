@@ -30,7 +30,14 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         gAnalytic=true;
         
     %default rectangle radius
-        rectRad=[];
+        rectRad=2/freq;
+        
+    %default settle radius
+        settleRad=[];
+        
+        %default inf flags
+        ainf=false;
+        binf=false;
     
     %% ------------------------------------------------------------------%
     % -------------------- INTERPRET USER INPUT ------------------------ %
@@ -99,8 +106,15 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                    if length(F) <2
                        error('need f(x) and its derivative, in cell form');
                    end
-               case 'rectRad'
+               case 'rectrad'
                    rectRad=varargin{j+1};
+               case 'settlerad' %radius outside of which function settles down
+                   settleRad = varargin{j+1};
+                   rectRad = settleRad;
+               case 'ainf'
+                   ainf=true;
+               case 'binf'
+                   binf=true;
            end
        end
     end
@@ -141,14 +155,15 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     if isnan(gStationaryPoints) %no stationary points specified by user
         [gStationaryPoints, gSingularities, gSPorders,~] = getStationaryPoints(a,b,rectRad,...
-                                                            gAnalytic, G, RectTol, N , visuals);
+                                                            gAnalytic, G, RectTol, N , visuals,...
+                                                            settleRad);
     end
     
     %locate branch points
     branchPoints = getIntegrandBranchPoints(gSPorders, fSPorders, intThresh);
     
     %combine stationary points with [a,b] to make 'critical points'
-    [criticalPoints, pathPowers] = makeCriticalPoints(a,b,gStationaryPoints,gSPorders+1, RectTol, gAnalytic);
+    [criticalPoints, pathPowers] = makeCriticalPoints(a,b,gStationaryPoints,gSPorders+1, RectTol, gAnalytic, ainf, binf);
     
     
     %% ------------------------------------------------------------------%
@@ -156,8 +171,8 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %--------------------------------------------------------------------%
     
     % if not enough derivatives provided:
-    if length(G)<2*max(pathPowers)
-        error('Need at least %d derivatives of g(x) to compute paths',2*round(max(pathPowers)));
+    if length(G)< (round(max(pathPowers))+1)
+        error('Need at least %d derivatives of g(x) to compute paths',round(max(pathPowers))+1);
     end
     
     %------now do a load of bodging for the finite path stuff------%
@@ -185,11 +200,13 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         
         %set ICs for SD path differential equation, which will determine SD path:
         ICs = NSDpathICv3( pathPowers(critPointIndex), G, criticalPoints(critPointIndex));
-            
+        %initialise this vector map, n'th entry is all the paths indices
+        %which start at the n'th critical point
+        CritPointToPathInds{critPointIndex}=[];
         for branchIndex=1:pathPowers(critPointIndex)
             fullIndex=fullIndex+1;
         
-            if ~FPindices(critPointIndex,branchIndex)
+            if ~FPindices{critPointIndex}(branchIndex)
 
                 COVsingularities=fSingularitiesObj;
                 for s=1:length(fSingularitiesObj)
@@ -230,19 +247,38 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             else %finite paths have already been computed, necessarily to detect if they were finite
                 X_{fullIndex}=hFinite{critPointIndex,branchIndex};
                 W_{fullIndex}=dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex};
+                %
             end
             
             P(fullIndex,2)=X_{fullIndex}(end);   
             P(fullIndex,1)=criticalPoints(critPointIndex);
-            
+            CritPointToPathInds{critPointIndex}=[CritPointToPathInds{critPointIndex} fullIndex];
+            PathIndsToCritPoint(fullIndex)=[critPointIndex];
         end
                 
     end
     
     numPathsSD=fullIndex; %record total number of paths
     
+    
+    
     %% there is a difference between knowing the path, and walking the path%
-    [X, W] = choosePath(a,b,P, G, freq, N, numPathsSD, pathPowers, visuals, X_, W_);
+    
+    %now make a useful array which is indexed by the fullIndex, and returns
+    %the fullIndex of every connected finite path
+    fullIndex=0;
+    for critPointIndex=1:length(criticalPoints)
+        for branchIndex=1:pathPowers(critPointIndex)
+            fullIndex=fullIndex+1;
+            if FPindices{critPointIndex}(branchIndex)>0
+                FPfullIndices{fullIndex}=CritPointToPathInds{FPindices{critPointIndex}(branchIndex)};
+            else
+                FPfullIndices{fullIndex}=[];
+            end
+        end
+    end
+    
+    [X, W] = choosePath(a,b,P, G, freq, N, numPathsSD, pathPowers, visuals, X_, W_, FPfullIndices, settleRad, ainf, binf);
     
     if ~gAnalytic || ~isempty(fSingularities)
         %add tiny circles around singular points if they lie inside the region

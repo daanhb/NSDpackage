@@ -1,7 +1,7 @@
 function [h,dhdp, W, FPindices] = getBranchesOfFinitePaths(prePathLengthsVec, pathEndIndex, criticalPoints, pathPowers, G, freq, N, COVsingularities, RelTol)
 
  
-FPindices=false(length(prePathLengthsVec),2);
+%FPindices=false(length(prePathLengthsVec),2);
 
     %initialise output
     for j=1:length(prePathLengthsVec)
@@ -9,6 +9,7 @@ FPindices=false(length(prePathLengthsVec),2);
             h{j,m}=[];
             dhdp{j,m}=[];
             W{j,m}=[];
+            FPindices{j}(m)=0;
         end
     end
     for j=1:length(prePathLengthsVec)
@@ -26,6 +27,8 @@ FPindices=false(length(prePathLengthsVec),2);
           [Psa{j}, Wsa{j}] = pathQuadFinite( P2, COVsingularities, freq, N );
           for n=1:pathPowers(pathEndIndex(j))
               [~,Hsa{n}] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(pathEndIndex(j))-1,G, ICsSA{n}, true), Psa{j}, ICsSA{n}, odeset('RelTol',RelTol) );
+              %flip this so endpoints are at the end of joined path
+              Hsa{n}=flipud(Hsa{n});
           end
        
        %now check which was the best match. See which midpoints of which
@@ -33,7 +36,7 @@ FPindices=false(length(prePathLengthsVec),2);
        dist=inf;
            for  m=1:pathPowers(j)
                for n=1:pathPowers(pathEndIndex(j))
-                    dist_=abs(Hsd{m}(end,1)-Hsa{n}(end,1));
+                    dist_=abs(Hsd{m}(end,1)-Hsa{n}(1,1));
                     if dist_<dist
                         dist=dist_;
                         mClosest=m;
@@ -45,7 +48,7 @@ FPindices=false(length(prePathLengthsVec),2);
             h{j,mClosest}=[Hsd{mClosest}(:,1); Hsa{nClosest}(:,1);];
             dhdp{j,mClosest}=[Hsd{mClosest}(:,2); Hsa{nClosest}(:,2);];
             W{j,mClosest}=[Wsd{j}; Wsa{j};];
-            FPindices(j,mClosest)=true;
+            FPindices{j}(mClosest)=pathEndIndex(j);
            clear ICsSA Hsd Hsa Wsa Wsd dist;
        end
     end

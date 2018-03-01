@@ -47,7 +47,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
         failCount=failCount+1;
     end
 %     
-    fprintf('\t%d\n',failCount);
+   % fprintf('\t%d\n',failCount);
         
     allZeros=rand+rand*1i;
     rect=rectIn;
@@ -80,7 +80,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, N, visuals)
             bisectRatio=.5+randScale*.5*(rand-.5);% in randScale*(.25,.75)
             failCount=failCount+1;
         end
-        fprintf('\t%d\n',failCount);
+        %fprintf('\t%d\n',failCount);
         %plot the new rectangles
         if visuals
             plotRects( newRectA, newRectB );

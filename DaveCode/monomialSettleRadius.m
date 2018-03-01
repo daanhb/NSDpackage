@@ -1,4 +1,4 @@
-function R = monomialSettleRadius(a, Npts, freq)
+function R = monomialSettleRadius(a, Npts, freq, thresh)
 %estimates the radius of a ball centred at the origin (perhaps
 %unecessarily), outside of which a monomial is dominated by it's leading
 %term, such that the steepest descent paths follow the valleys closely
@@ -9,9 +9,12 @@ function R = monomialSettleRadius(a, Npts, freq)
     if nargin<=3
         freq=1; %extra freq info can only speed up process
     end
-
-    thresh=1E-12; % cost of getting from circle edge to infinity
-    reScale=1.1;  % amount to rescale by if the circle is too small
+    if nargin<=3
+        thresh=1E-12; % cost of getting from circle edge to infinity
+    end
+    reScale=sqrt(2);  % amount to rescale by if the circle is too small
+    
+    
     %reconstruct the phase:
     g = @(z) polyval(a,z);
     

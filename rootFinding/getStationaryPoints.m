@@ -1,10 +1,29 @@
 function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStationaryPoints(a,b,rectRad,...
-                                                                     analytic, G, RectTol, N , visuals)
-    %This one should work better, although the '2' is quite arbitrary.
-    Nrect=30;
+                                                                     analytic, G, RectTol, Npts , visuals,...
+                                                                     settleRad)
+                
+    %Requires at least up to G{3}:=g"(x)
+     if length(G)<3
+            error(['Require up to second derivative of phase non-analytic functions' ...
+                'OR an anlytic phase function, to automatically detect stationary points']);
+     end
+     
+     %This one should work better, although the '2' is quite arbitrary.
     if isempty(rectRad)
-        rectRad=.75*(b-a);
+        if isinf(a+b)
+            rectRad=settleRad;
+        else
+            rectRad=.75*(b-a);
+        end
     end
+    
+    %scale quad points by length of rectangle:
+    Nrect=Npts*rectRad;
+    
+    if isinf(a+b)
+       a=0; b=0; %centre rectangle at origin, as there's no other point of reference
+    end
+    
     initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];  
 
     if analytic %can do a quicker verison of the zeros search:
@@ -15,15 +34,5 @@ function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStation
         %now find all stationary points inside of this rectangle
         [gStationaryPoints, gSingularities, gSPorders, gPoleOrders] = findZerosSingsRect( G{2}, G{3}, initRect, RectTol, Nrect , visuals);        
     end
-    %assumes g is a cell array containing increasing derivatives of phase
-    %function g. Requires at least up to G{3}:=g"(x)
-    if length(G)<3
-        if ~analytic
-            error('Require up to second derivative of phase non-analytic functions, OR an anlytic phase function, to automatically detect stationary points');
-%Not going to bother adding extra derivatives via Cauchy differentiation,
-%it's too unstable.
-            %         else
-%             G=finishDerivs( G, 3, N, RectTol );
-        end
-    end
+
 end

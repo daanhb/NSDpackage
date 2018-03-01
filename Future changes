@@ -5,10 +5,8 @@ a or b complex causes errors
 med term:
 -Change adjaceny matrix approach to a cost-function type approach to find SD path
 -Rather than two standard Gaussian splits for finite paths, more involved parametrisation can cover both. This also avoids the bodge in the finite path detection algorithm.s
+- change number of quadrature points to reflect stationary points
 
 Long term:
--1. Detect poles in complex plane
--2. Allow phase g(x) to be complex, or have singularities/poles
 3. Detect if integrand is/isn't oscillatory
 5. Account for g(x)=x^(1/2)~type branch cuts
-6. If analytic, can stop early when have found one stationary point of order one in a rectangle
