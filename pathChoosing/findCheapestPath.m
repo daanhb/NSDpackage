@@ -15,10 +15,10 @@ function [path, cost] = findCheapestPath( P, g,  freq, Npts, m, pathPowers, FPfu
            if P(j,1)==P(ell,1) %start points are the same
               A(ell,j)=small; %need this bodge - matlab only connects non-zero entries
               
-              %next two elseifs contain some confusing stuff. The point is
+              %next elseif contains some confusing stuff. The point is
               %to map the path indices to and from the critical point
               %indices, the latter of which is fewer than the former
-           elseif ismember(ell,FPfullIndices{j})
+           elseif ismember(ell,FPfullIndices{j}) || ismember(j,FPfullIndices{ell})
                   A(ell,j)=small;
            else   %endpoints are possibly 'connected'
               A(ell,j)=pathCost(P(j,2),P(ell,2), g,  freq, Npts);  

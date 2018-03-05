@@ -5,11 +5,10 @@
     % actually test some of these
      
 %% play-with-able parameters:
-freq=1; %stick to low frequency regime for now
-Npts=20; %number of quadrature points per SD path
-polyCoeffs = [1 3 1 -2 1]; %a_1*x^N + ... a_N*x + a_{N+1}, if a:=polyCoeffs %[1 3 1 -2 1] was cool
-aValleyIndex=1; %index of valley to start in 
-bValleyIndex=2; %index of valley to end in 
+Npts=15; %number of quadrature points per SD path
+x=6; y=2; % x in {-8,-6,-4,-2,0,2,4,6,8} & y in {0,2,4,6,8}
+polyCoeffs = [1 0 x y 0]; %a_1*x^N + ... a_N*x + a_{N+1}, if a:=polyCoeffs
+a=-1; b=1; %directions of valleys
 
 %% ----------------------------------------------------------------------------------------- %%
 addpath ../..;
@@ -34,23 +33,24 @@ if max(aValleyIndex,bValleyIndex)>order
 end
 %% ----------------------------------------------------------------------------------------- %%
 
-% now choose the infinite endpoints:
-valleys = exp(1i*pi*(1 + 4*(1:order))/(2*order));
-a=valleys(aValleyIndex); b=valleys(bValleyIndex);
-
 %this radius could be considered artificial infinity, outside of which all SD
 %paths won't deviate much from a straight line
 R = monomialSettleRadius(polyCoeffs)+rand;
 fprintf('\nSettled radius = %.1f\n',R);
 
-close; %close figure, if there is one
+%close; %close figure, if there is one
+freq=1; %stick to low frequency regime for now
 [ X, W ] = NSD45( a, b, freq, Npts, G, 'analytic', true, 'visuals on', ...
                     'settleRad', R, 'ainf', 'binf');
          %second row are all options for infinite endpoints
-display('pink line is chosen path, blue line is discarded path(s)');
+fprintf('\nPink quad points are on chosen path, blue line is discarded path(s)');
          %now time it (without making visuals)
 tic;
 NSD45( a, b, freq, Npts, G, 'analytic', true, ...
                     'settleRad', R, 'ainf', 'binf');
 T=toc;
 fprintf('\nTook %f seconds',T);
+
+I_GHH=sum(W); %Gibbs-Hewett-Huybrechs estimate
+I_CHK=KirkPearceyData(x,y); %Conor-Hobbs-Kirk estimate
+fprintf('\nRelative error (against 6dp of Pearcey data) %e',abs(I_GH-I_K)/abs(I_K));

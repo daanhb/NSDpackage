@@ -37,7 +37,14 @@ function [X, W] = choosePath(a,b,P, G, freq, N, numPathsSD, pathPowers, visuals,
     end
     
     X=[];   W=[]; xv=[]; yv=[];
-    inOut=1;
+    %if path starts at infinity, first SD contour should be negatively
+    %weighted
+    if ainf
+        inOut=-1;
+    else
+        inOut=1;
+    end
+    
     for fullIndex=pathOrder
         W=[W; inOut*W_{fullIndex}];
         X=[X; X_{fullIndex};];       
