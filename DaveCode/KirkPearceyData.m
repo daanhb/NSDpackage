@@ -50,7 +50,8 @@ function I = KirkPearceyData(x,y)
 
     [~, XYindex]=ismember([x y], XY, 'rows');
     if XYindex==0
-        error('Value not found in Kirk Pearcey data');
+        error(['Value not found in Kirk Pearcey data, ',...
+            'Must be x in {-8,-6,-4,-2,0,2,4,6,8}, y in {0,2,4,6,8}']);
     end
     I=RealBits(XYindex)+1i*ImagBits(XYindex);
 

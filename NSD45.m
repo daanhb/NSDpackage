@@ -254,6 +254,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
             P(fullIndex,1)=criticalPoints(critPointIndex);
             CritPointToPathInds{critPointIndex}=[CritPointToPathInds{critPointIndex} fullIndex];
             PathIndsToCritPoint(fullIndex)=[critPointIndex];
+            CritPointEndPoint{critPointIndex}(branchIndex)=X_{fullIndex}(end);
         end
                 
     end
@@ -278,7 +279,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         end
     end
     
-    [X, W] = choosePath(a,b,P, G, freq, N, numPathsSD, pathPowers, visuals, X_, W_, FPfullIndices, settleRad, ainf, binf);
+    [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices, P, G, freq, N, numPathsSD, visuals, X_, W_, hFinite, settleRad, ainf, binf);
     
     if ~gAnalytic || ~isempty(fSingularities)
         %add tiny circles around singular points if they lie inside the region
