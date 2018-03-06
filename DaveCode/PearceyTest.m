@@ -1,17 +1,16 @@
 %test a Pearchey integral with polynomial phase, for Dave
      
 close; %close figure, if there is one
-clc; %clear screen
 clear classes; %clear all variables
 %% play-with-able parameters:
 Npts=15; %number of quadrature points per SD path
-x=4; y=6; % x in {-8,-6,-4,-2,0,2,4,6,8} & y in {0,2,4,6,8}
+x=-6; y=8; % x in {-8,-6,-4,-2,0,2,4,6,8} & y in {0,2,4,6,8}
 polyCoeffs = [1 0 x y 0]; %a_1*x^N + ... a_N*x + a_{N+1}, if a:=polyCoeffs
 a=-1; b=1; %directions of valleys
 
 %% ----------------------------------------------------------------------------------------- %%
-addpath ../..;
-StandardPaths;
+% addpath ../..;
+% StandardPaths;
 %make the polynomial
 order = length(polyCoeffs)-1;
 fprintf('\nPhase is an order %d polynomial',order);
@@ -19,8 +18,9 @@ fprintf('\nPhase is an order %d polynomial',order);
 D1polyCoeffs = polyCoeffs(1:order).*fliplr(1:order);
 %second derivative
 D2polyCoeffs = D1polyCoeffs(1:(order-1)).*fliplr(1:(order-1));
+D3polyCoeffs = D2polyCoeffs(1:(order-1)).*fliplr(1:(order-1));
 
-G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x)};
+G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x),@(x) polyval(D3polyCoeffs,x)};
 
 %% ----------------------------------------------------------------------------------------- %%
 
@@ -44,3 +44,4 @@ fprintf('\nTook %f seconds',T);
 I_GHH=sum(W); %Gibbs-Hewett-Huybrechs estimate
 I_CHK=KirkPearceyData(x,y); %Conor-Hobbs-Kirk estimate
 fprintf('\nRelative error (against 6dp of Pearcey data) %e',abs(I_CHK-I_GHH)/abs(I_CHK));
+pause(2);

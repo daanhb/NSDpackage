@@ -16,7 +16,8 @@ function ICs = NSDpathICv3( SPorder, G, startPoint, ascFlag )
         end
 
         for v=3:SPorder
-            error('Have not coded this nasty looking FDB stuff yet');
+            warning('Have not coded this nasty looking FDB stuff yet... but I think its zero anyway');
+             ICs{r}(v)=0;
         end
     end
 

@@ -19,7 +19,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     %loads of different values for 'almost zero'
         %tolerance for ODE45 solver:
-        RelTol=1E-13;
+        RelTol=1E-12;
         %tolerance for two statoionary points to become clumped together:
         RectTol=10^-3;
         %distance from an integer to be considered not an integer
@@ -237,14 +237,23 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                     dhdp{critPointIndex,branchIndex}=1i./G{2}(H(2:end)); %back into the ODE 
                 end
 
+                %check that ODE45 gave a path that actually decays
+                %exponentially:
+                [divTF,nFinal] = divergenceTest(h{critPointIndex,branchIndex},G{1});
+                if divTF
+                    h{critPointIndex,branchIndex}=h{critPointIndex,branchIndex}(1:nFinal);
+                    dhdp{critPointIndex,branchIndex}(1:nFinal);
+                end
                 %absorb h'(p) and other constants into weights, also negate paths
                 %incoming from infinity
-                    W_{fullIndex}=...
-                        (1/(freq^(1/pathPowers(critPointIndex))))*exp(1i*freq*G{1}(criticalPoints(critPointIndex)))...
-                        .*dhdp{critPointIndex,branchIndex}.*w{critPointIndex,branchIndex};
+                W_{fullIndex}=...
+                    (1/(freq^(1/pathPowers(critPointIndex))))*exp(1i*freq*G{1}(criticalPoints(critPointIndex)))...
+                    .*dhdp{critPointIndex,branchIndex}.*w{critPointIndex,branchIndex};
 
                 X_{fullIndex}=h{critPointIndex,branchIndex}; 
             else %finite paths have already been computed, necessarily to detect if they were finite
+                %finite paths shouldn't diverge (in IVP sense) - else they become infinite
+                %paths anyway
                 X_{fullIndex}=hFinite{critPointIndex,branchIndex};
                 W_{fullIndex}=dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex};
                 %

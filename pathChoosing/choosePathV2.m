@@ -79,7 +79,7 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     end
     
     if cost>.1
-        warning(sprintf('Cost of truncating SD path is %e, may not be optimal path, %d %d %d %d',cost, path(1),path(2),path(3),path(4)));
+        warning(sprintf('Cost of truncating SD path is %e, may not be optimal path',cost));
     end
     
     %check for three consecutice Q types, doesn't make sense but can happen

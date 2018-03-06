@@ -11,7 +11,7 @@ function isZero = isZeroOnLine( a,b,F, lineLength )
     
     f=@(s) F(lineMap(s));
     
-    t=linspace(0,1,1000);
+    t=linspace(0,1,ceil(1000*max(1,lineLength)));
     
     if min(abs(f(t)))<thresh2
         isZero=true;
