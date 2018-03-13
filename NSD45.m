@@ -29,8 +29,9 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         visuals=false;
         gAnalytic=true;
         
-    %default rectangle radius
-        rectRad=2/freq;
+    %default rectangle radius - dependence on frequency not totally clear
+    %yet
+        rectRad=.5;%2/freq;
         
     %default settle radius
         settleRad=[];

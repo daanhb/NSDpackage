@@ -20,16 +20,16 @@ for x=X
         yCount=yCount+1;
         fprintf('\ty=%d ',y);
         polyCoeffs = [1 0 x y 0]; %a_1*x^N + ... a_N*x + a_{N+1}, if a:=polyCoeffs
-        %% ----------------------------------------------------------------------------------------- %%
-        %first derivative
+        %% ------------------------------------------------------------
         D1polyCoeffs = polyCoeffs(1:order).*fliplr(1:order);
         %second derivative
         D2polyCoeffs = D1polyCoeffs(1:(order-1)).*fliplr(1:(order-1));
-        %third derivative
-        D3polyCoeffs = D2polyCoeffs(1:(order-1)).*fliplr(1:(order-1));
+        D3polyCoeffs = D2polyCoeffs(1:(order-2)).*fliplr(1:(order-2));
+        D4polyCoeffs = D3polyCoeffs(1:(order-3)).*fliplr(1:(order-3));
+
 
         %define g and it's first three derivatives in format required:
-        G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x), @(x) polyval(D3polyCoeffs,x)};
+        G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x), @(x) polyval(D3polyCoeffs,x),@(x) polyval(D4polyCoeffs,x)};
 
         %% ----------------------------------------------------------------------------------------- %%
 

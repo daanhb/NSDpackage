@@ -20,6 +20,14 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     for j=1:length(criticalPoints)
             nodeCount=nodeCount+1;
             node(nodeCount)=struct('z',criticalPoints(j),'type','C','CPindex',j,'infStart',false,'finiteEnd',false);
+            
+            if ~ainf && node(nodeCount).z==criticalPoints(1)
+                startNodes=[startNodes nodeCount];
+            end
+            if ~binf && node(nodeCount).z==criticalPoints(end)
+                endNodes=[endNodes nodeCount];
+            end
+            
             %outerNodeCount=nodeCount; %keep track of node where the SD path starts
         for m=1:length(CritPointEndPoint{j})
             %nodeCount=nodeCount+1;
@@ -30,12 +38,6 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             else 
                 nodeCount=nodeCount+1;
                 node(nodeCount)=struct('z',CritPointEndPoint{j}(m), 'type', 'Q', 'CPindex', [j FPindices{j}(m)], 'infStart',false, 'finiteEnd', hFinite{j,m}(end));
-            end
-            if ~ainf && node(nodeCount).z==criticalPoints(1)
-                startNodes=[startNodes node];
-            end
-            if ~binf && node(nodeCount).z==criticalPoints(end)
-                endNodes=[endNodes node];
             end
            
         end
