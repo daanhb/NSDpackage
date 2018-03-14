@@ -248,16 +248,13 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                 
                 %now check if the path we've just created is 'nearly
                 %finite'
-                [nearlyFinite, nfParamPoint, nfCritPointIndex] = nearlyFiniteCheck(P0, h{critPointIndex,branchIndex}, dhdp{critPointIndex,branchIndex}, criticalPoints(critPointIndex), criticalPoints);
+                [nearlyFinite, nfParamPoint, nfCritPoint] = nearlyFiniteCheck(P0, h{critPointIndex,branchIndex}, dhdp{critPointIndex,branchIndex}, criticalPoints(critPointIndex), criticalPoints);
                 if nearlyFinite
                     %mash this nearly finite path into a finite path.
-                    % update the FPindices vector
-                    FPindices{critPointIndex}(branchIndex)=nfCritPointIndex;
-                    [hFinite{critPointIndex,branchIndex}, dhdpFinite{critPointIndex,branchIndex}, Wfinite{critPointIndex,branchIndex}]...
-                            = nearlyFinitePathFix(nfParamPoint, criticalPoints(nfCritPointIndex), criticalPoints(critPointIndex), pathPowers(critPointIndex),...
-                                ICs{branchIndex}, G, freq, N, COVsingularities, RelTol);
-                    X_{fullIndex} = hFinite{critPointIndex,branchIndex};
-                    W_{fullIndex} = dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex};
+                    %** update the FPindices vector
+                    [hFinite, dhdpFinite{critPointIndex,branchIndex}, Wfinite{critPointIndex,branchIndex}] = nearlyFinitePathFix(nfParamPoint, nfCritPoint, criticalStartPoints, pathPower, IC, G, freq, N, COVsingularities, RelTol);
+                    X_{fullIndex}=hFinite{critPointIndex,branchIndex};
+                    W_{fullIndex}=dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex};
                     %
                 else
                     %absorb h'(p) and other constants into weights, also negate paths

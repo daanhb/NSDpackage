@@ -3,7 +3,7 @@
 close; %close figure, if there is one
 clear classes; %clear all variables
 %% play-with-able parameters:
-Npts=5; %number of quadrature points per SD path
+Npts=15; %number of quadrature points per SD path
 x=2; y=2; % x in {-8,-6,-4,-2,0,2,4,6,8} & y in {0,2,4,6,8}
 polyCoeffs = [1 0 x y 0]; %a_1*x^N + ... a_N*x + a_{N+1}, if a:=polyCoeffs
 a=-1; b=1; %directions of valleys
