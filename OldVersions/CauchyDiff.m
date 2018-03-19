@@ -27,4 +27,7 @@ function fDiff = CauchyDiff( a,f,centre,radius, diffs, N )
     %now transform output into same shape as input
     fDiff=reshape(fDiff,size(a))/one;
     
+    
+    
+    
 end
