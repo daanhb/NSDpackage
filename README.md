@@ -1,4 +1,6 @@
-Numerical steepest descent solver, currently quite slow and unstable. Please let me know if you find ways to break it.
+**Numerical steepest descent solver**
+
+Currently quite slow and unstable. Please let me know if you find ways to break it.
 
 To compute an integral over an infinite contour, from a valley with complex angle ``a`` to angle ``b``, type
 ```
