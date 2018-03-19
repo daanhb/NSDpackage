@@ -10,3 +10,4 @@ figure(1);
 plot(R,A0(R)./A1(R));
 figure(2);
 plot(R,abs(exp(exp(-1i*pi/6)*R)./(A0(R).^2)));
+
