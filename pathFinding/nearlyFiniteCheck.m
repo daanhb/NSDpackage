@@ -28,5 +28,4 @@ function [yn,P, nearCP] = nearlyFiniteCheck(p0, h0, h1, startCP, CPs)
         nearCP=[];
     end
     
-    
 end

@@ -4,7 +4,7 @@ close; %close figure, if there is one
 clear classes; %clear all variables
 %% play-with-able parameters:
 Npts=15; %number of quadrature points per SD path
-x=2; y=2; % x in {-8,-6,-4,-2,0,2,4,6,8} & y in {0,2,4,6,8}
+x=0; y=0; % x in {-8,-6,-4,-2,0,2,4,6,8} & y in {0,2,4,6,8}
 polyCoeffs = [1 0 x y 0]; %a_1*x^N + ... a_N*x + a_{N+1}, if a:=polyCoeffs
 a=-1; b=1; %directions of valleys
 
@@ -20,9 +20,12 @@ D1polyCoeffs = polyCoeffs(1:order).*fliplr(1:order);
 D2polyCoeffs = D1polyCoeffs(1:(order-1)).*fliplr(1:(order-1));
 D3polyCoeffs = D2polyCoeffs(1:(order-2)).*fliplr(1:(order-2));
 D4polyCoeffs = D3polyCoeffs(1:(order-3)).*fliplr(1:(order-3));
+D5polyCoeffs = D4polyCoeffs(1:(order-4)).*fliplr(1:(order-4));
+D6polyCoeffs = D5polyCoeffs(1:(order-5)).*fliplr(1:(order-5));
 
 G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x),...
-    @(x) polyval(D3polyCoeffs,x),@(x) polyval(D4polyCoeffs,x)};
+    @(x) polyval(D3polyCoeffs,x),@(x) polyval(D4polyCoeffs,x), @(x) polyval(D5polyCoeffs,x),...
+    @(x) polyval(D6polyCoeffs,x)};
 
 %% ----------------------------------------------------------------------------------------- %%
 

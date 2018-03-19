@@ -25,16 +25,22 @@ maxJoinDistThresh = .1;%.1;
           %there's a finite path here
           P1=(prePathLengthsVec(j)/2)^(1/pathPowers(j));
           ICsSD = NSDpathICv3( pathPowers(j), G, criticalPoints(j), false);
-          [Psd{j}, Wsd{j}] = pathQuadFinite( P1, COVsingularities, freq, N );
+          [Psd{j}, Wsd{j}] = pathQuadFinite( P1, COVsingularities, pathPowers(j), freq, N );
           for m=1:pathPowers(j)
-               [~,Hsd{m}] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(j)-1,G, ICsSD{m}, false), Psd{j}, ICsSD{m}, odeset('RelTol',RelTol) );      
+               [~,Hsd{m}] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(j)-1,G, ICsSD{m}, false), [0; Psd{j}], ICsSD{m}, odeset('RelTol',RelTol) ); 
+              %avoid the zero/IC entry, as this didn't correspond to a
+              %quadrature point
+              Hsd{m}=Hsd{m}(2:end,:);     
           end
           
           P2=(prePathLengthsVec(j)-P1^(pathPowers(j)))^(1/pathPowers(pathEndIndex(j)));
           ICsSA = NSDpathICv3( pathPowers(pathEndIndex(j)), G, criticalPoints(pathEndIndex(j)), true);
-          [Psa{j}, Wsa{j}] = pathQuadFinite( P2, COVsingularities, freq, N );
+          [Psa{j}, Wsa{j}] = pathQuadFinite( P2, COVsingularities, pathPowers(pathEndIndex(j)), freq, N );
           for n=1:pathPowers(pathEndIndex(j))
-              [~,Hsa{n}] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(pathEndIndex(j))-1,G, ICsSA{n}, true), Psa{j}, ICsSA{n}, odeset('RelTol',RelTol) );
+              [~,Hsa{n}] = ode45(@(t,y) NSDpathODE(t,y,pathPowers(pathEndIndex(j))-1,G, ICsSA{n}, true), [0; Psa{j}], ICsSA{n}, odeset('RelTol',RelTol) );
+              %avoid the zero/IC entry, as this didn't correspond to a
+              %quadrature point
+              Hsa{n}=Hsa{n}(2:end,:);
               %flip this so endpoints are at the end of joined path
               Hsa{n}=flipud(Hsa{n});
           end

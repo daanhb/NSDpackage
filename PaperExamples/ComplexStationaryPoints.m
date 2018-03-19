@@ -2,7 +2,7 @@ clear classes;
 syms x f g;
 
 N_Q_set=[4];
-omega_set=10.^[1:3];
+omega_set=10.^[0:3];
 
 %symbolic functions:
 %g = symfun(.5*x^2-.5i*x, x); %has stationary points at +i,-i

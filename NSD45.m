@@ -31,7 +31,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         
     %default rectangle radius - dependence on frequency not totally clear
     %yet
-        rectRad=.5;%2/freq;
+        rectRad=1;%2/freq;%.5;
         
     %default settle radius
         settleRad=[];
@@ -272,7 +272,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                 %finite paths shouldn't diverge (in IVP sense) - else they become infinite
                 %paths anyway
                 X_{fullIndex}=hFinite{critPointIndex,branchIndex};
-                W_{fullIndex}=dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex};
+                W_{fullIndex}=dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex}*exp(1i*freq*G{1}(criticalPoints(critPointIndex)));
                 %
             end
             

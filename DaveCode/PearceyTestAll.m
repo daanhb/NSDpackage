@@ -4,8 +4,8 @@ clc; %clear screen
 clear classes; %clear all variables
 close; %close any images currently open, so we don't draw all over them
 
-Npts=30; %number of quadrature points per SD path
-X=[-8 -6 -4 -2 2 4 6 8]; Y=[2 4 6 8]; %}
+Npts=15; %number of quadrature points per SD path
+X=[-8 -6 -4 -2 0 2 4 6 8]; Y=[0 2 4 6 8]; %}
 a=-1; b=1; %directions of valleys
 order=4;
 freq=1;
@@ -26,10 +26,14 @@ for x=X
         D2polyCoeffs = D1polyCoeffs(1:(order-1)).*fliplr(1:(order-1));
         D3polyCoeffs = D2polyCoeffs(1:(order-2)).*fliplr(1:(order-2));
         D4polyCoeffs = D3polyCoeffs(1:(order-3)).*fliplr(1:(order-3));
+        D5polyCoeffs = D4polyCoeffs(1:(order-4)).*fliplr(1:(order-4));
+        D6polyCoeffs = D5polyCoeffs(1:(order-5)).*fliplr(1:(order-5));
 
 
         %define g and it's first three derivatives in format required:
-        G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x), @(x) polyval(D3polyCoeffs,x),@(x) polyval(D4polyCoeffs,x)};
+        G = {@(x) polyval(polyCoeffs,x),@(x) polyval(D1polyCoeffs,x),@(x) polyval(D2polyCoeffs,x),...
+            @(x) polyval(D3polyCoeffs,x),@(x) polyval(D4polyCoeffs,x), @(x) polyval(D5polyCoeffs,x),...
+            @(x) polyval(D6polyCoeffs,x)};
 
         %% ----------------------------------------------------------------------------------------- %%
 
@@ -59,6 +63,6 @@ xticklabels({'-8','-6','-4','-2','2','4','6','8'});
 yticks=1:4;
 yticklabels({'','2','','4','','6','','8'});
 %view(0, 90);
-xlabel('x'); ylabel('y'); title('(log10) error compared with CHK 6.d.p results');
+xlabel('x'); ylabel('y'); title('(log10) error compared with CHK 5.d.p results');
 colorbar;
 saveas(gcf,'PearceyImages\\ErrorChecks.jpg');

@@ -8,7 +8,7 @@ function dHdp = NSDpathODE(p,h,n,g,ICs,ascFlag)
         end
     end
     
-    if length(g)<(n+2)
+    if length(g)<(n+1)
         error('Higher derivatives of g required as input');
     end
     pSmallThresh=1E-8;
