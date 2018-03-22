@@ -1,17 +1,17 @@
-function isZero = isZeroOnLine( a,b,F, lineLength )
+function isZero = isZeroOnLine( a,b,F, thresh2, lineLength )
 
-    if nargin<=3
+    if nargin<=4
         lineLength=abs(b-a);
     end
 
     thresh1=.01; %threshold for how close the complex zero has to be to the real one
-    thresh2=0.1; %threshold for how how close a zero can be to the line
+    %thresh2=0.01; %threshold for how how close a zero can be to the line
 
     lineMap=@(s) a+exp(angle(b-a)*1i)*lineLength.*s;
     
     f=@(s) F(lineMap(s));
     
-    t=linspace(0,1,ceil(1000*max(1,lineLength)));
+    t=linspace(0,1,1000*ceil(max(1,lineLength)));
     
     if min(abs(f(t)))<thresh2
         isZero=true;

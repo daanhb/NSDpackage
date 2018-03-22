@@ -1,7 +1,7 @@
 clear classes;
 syms x f g;
 
-N_Q_set=[4];
+N_Q_set=[30];
 omega_set=10.^[0:3];
 
 %symbolic functions:
@@ -23,7 +23,7 @@ for N_Q=N_Q_set
         [z,w] = NSD45( -1, 1, omega, N_Q, G, 'analytic', true, 'visuals on');
         Q=sum(w);
         R(omegaCount,Qcount)=abs(Q-vpa(I,16))/abs(vpa(I,16));
-        fprintf('New problem\n');
+        %fprintf('New problem\n');
     end
 end
 (log10(R))

@@ -19,6 +19,10 @@ function [h, dhdp, w] = nearlyFinitePathFix(nfParamPoint, nfCritPoint, criticalS
     %piece this wonky path together:
     h = [Hstart(2:(end-1),1); Hend];
     w = [Wstart*exp(1i*freq*G{1}(IC(1))); Wend.*exp(1i*freq*G{1}(Hend))];% 
-    dhdp = [Hstart(2:(end-1),2); ones(length(Wend),1)*dhEnddp];
+    if pathPower ==1 
+        dhdp = 1i./G{2}(h); %back into the ODE 
+    else
+        dhdp = [Hstart(2:(end-1),2); ones(length(Wend),1)*dhEnddp];
+    end
     
 end

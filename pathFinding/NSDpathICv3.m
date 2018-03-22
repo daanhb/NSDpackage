@@ -16,6 +16,9 @@ function h0 = NSDpathICv3( SPorder, G, startPoint, ascFlag )
         end
 
         for v=3:SPorder
+            if length(G)<v+2
+                error('Need more derivatives of phase');
+            end
 %             uses a simplified version of Faa di Bruno's formula, ignoring
 %             lower order derivatives of phase g at stationry points (as these are
 %             zero).

@@ -1,6 +1,6 @@
 function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStationaryPoints(a,b,rectRad,...
                                                                      analytic, G, RectTol, Npts , visuals,...
-                                                                     settleRad)
+                                                                     settleRad, intThresh)
                 
     %Requires at least up to G{3}:=g"(x)
      if length(G)<3
@@ -18,7 +18,7 @@ function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStation
     end
     
     %scale quad points by length of rectangle:
-    Nrect=Npts*rectRad;
+    Nrect=Npts*max(1,rectRad);
     
     if isinf(a+b)
        a=0; b=0; %centre rectangle at origin, as there's no other point of reference
@@ -27,7 +27,7 @@ function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStation
     initRect=[a-rectRad-rectRad*1i  b+rectRad-rectRad*1i  b+rectRad+rectRad*1i  a-rectRad+rectRad*1i];  
 
     if analytic %can do a quicker verison of the zeros search:
-        [gStationaryPoints, gSPorders] = findZerosRect( G{2}, G{3}, initRect, RectTol, Nrect, visuals );
+        [gStationaryPoints, gSPorders] = findZerosRect( G{2}, G{3}, initRect, RectTol, intThresh, Nrect, visuals );
         gSingularities=[];
         gPoleOrders=[];
     else %need ot zoom in further into the rectangle:

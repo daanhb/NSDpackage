@@ -15,10 +15,10 @@ Qcount=0;
 for N_Q=N_Q_set
     Qcount=Qcount+1;
     omegaCount=0;
-    for omega=omega_set
+    for freq=omega_set
         omegaCount=omegaCount+1;
-        I=int(f(x)*exp(1i*omega*g(x)),0,1);
-        [z,w] = NSD45( 0, 1, omega, N_Q, G, 'analytic', true, 'visuals on');
+        I=int(f(x)*exp(1i*freq*g(x)),0,1);
+        [z,w] = NSD45( 0, 1, freq, N_Q, G, 'analytic', true, 'visuals on', 'rectRad',.5/freq);
         Q=sum(w);
         R(omegaCount,Qcount)=abs(Q-vpa(I));
     end

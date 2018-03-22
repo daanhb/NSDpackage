@@ -13,6 +13,9 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %fact it may be sensible to start over with a larger rectangle, to be
 %totally robust.
 
+%add all of the necessary code:
+StandardPaths();
+
     %% ------------------------------------------------------------------%
     % -------------------------- KEY PARAMETERS ------------------------ %
     %--------------------------------------------------------------------%
@@ -21,9 +24,12 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         %tolerance for ODE45 solver:
         RelTol=1E-12;
         %tolerance for two statoionary points to become clumped together:
-        RectTol=10^-3;
+        RectTol=.001;
         %distance from an integer to be considered not an integer
-        intThresh=0.01;
+        intThresh=0.0001;
+        
+    %number of quadrature points used for the integrals inside of this code
+        RectQuadPts = 15;
         
     %flag for plotting stuff as we go
         visuals=false;
@@ -31,7 +37,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         
     %default rectangle radius - dependence on frequency not totally clear
     %yet
-        rectRad=1;%2/freq;%.5;
+        rectRad=.5/freq;
         
     %default settle radius
         settleRad=[];
@@ -48,7 +54,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     %this up
     for j=1:length(G)
         if ~isa(G{j}, 'function_handle') 
-            error(sprintf('%dth entry of 5th argument not function handle',j));
+            error(sprintf('%dth entry of 5th input argument not function handle',j));
         end
     end
     
@@ -129,7 +135,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     if gAnalytic
         fSingularities=[]; fSPorders=[];
     elseif fTest
-        [~, fSingularities, fSPorders, ~] = findZerosSingsRect( F{1}, F{2}, initRect, RectTol, N , visuals);
+        [~, fSingularities, fSPorders, ~] = findZerosSingsRect( F{1}, F{2}, initRect, RectTol, RectQuadPts , visuals);
     end
     
     
@@ -156,8 +162,8 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
     
     if isnan(gStationaryPoints) %no stationary points specified by user
         [gStationaryPoints, gSingularities, gSPorders,~] = getStationaryPoints(a,b,rectRad,...
-                                                            gAnalytic, G, RectTol, N , visuals,...
-                                                            settleRad);
+                                                            gAnalytic, G, RectTol, RectQuadPts , visuals,...
+                                                            settleRad, intThresh);
     end
     
     %locate branch points
@@ -248,7 +254,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                 
                 %now check if the path we've just created is 'nearly
                 %finite'
-                [nearlyFinite, nfParamPoint, nfCritPointIndex] = nearlyFiniteCheck(P0, h{critPointIndex,branchIndex}, dhdp{critPointIndex,branchIndex}, criticalPoints(critPointIndex), criticalPoints);
+                [nearlyFinite, nfParamPoint, nfCritPointIndex] = nearlyFiniteCheck(P0, h{critPointIndex,branchIndex}, dhdp{critPointIndex,branchIndex}, criticalPoints(critPointIndex), criticalPoints, freq);
                 if nearlyFinite
                     %mash this nearly finite path into a finite path.
                     % update the FPindices vector
@@ -303,7 +309,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         end
     end
     
-    [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices, P, G, freq, N, numPathsSD, visuals, X_, W_, hFinite, settleRad, ainf, binf);
+    [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices, P, G, freq, RectQuadPts, numPathsSD, visuals, X_, W_, hFinite, settleRad, ainf, binf);
     
     if ~gAnalytic || ~isempty(fSingularities)
         %add tiny circles around singular points if they lie inside the region

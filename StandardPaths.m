@@ -1,5 +1,7 @@
+function StandardPaths()
+
 %adds all NSD45 relevant paths:
-% %addpath NSD;
+%addpath NSD;
 % addpath NSD/pathChoosing;
 % addpath NSD/pathFinding;
 % addpath NSD/quadrature;
@@ -28,3 +30,5 @@ addpath quadrature/OPQ;
 
 %(should probably go through these at some point and delete what's not
 %needed)
+
+end

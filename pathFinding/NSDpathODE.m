@@ -11,7 +11,7 @@ function dHdp = NSDpathODE(p,h,n,g,ICs,ascFlag)
     if length(g)<(n+2)
         error('Higher derivatives of g required as input');
     end
-    pSmallThresh=1E-8;
+    pSmallThresh=1E-5;
     if n==0
          dHdp =  AscDescDir*1i./g{2}(h); 
     elseif p>=pSmallThresh && abs(g{2}(h(1)))>=pSmallThresh
