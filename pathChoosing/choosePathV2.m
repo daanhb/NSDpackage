@@ -9,7 +9,7 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     pathCount=0;
     if ainf
         nodeCount=1;
-        node(nodeCount)=struct('z',a*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',false);
+        node(nodeCount)=struct('z',a*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',[]);
         startNodes=1;
     else
         startNodes=[];
@@ -19,7 +19,7 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     %so many indices...
     for j=1:length(criticalPoints)
             nodeCount=nodeCount+1;
-            node(nodeCount)=struct('z',criticalPoints(j),'type','C','CPindex',j,'infStart',false,'finiteEnd',false);
+            node(nodeCount)=struct('z',criticalPoints(j),'type','C','CPindex',j,'infStart',false,'finiteEnd',[]);
             
             if ~ainf && node(nodeCount).z==criticalPoints(1)
                 startNodes=[startNodes nodeCount];
@@ -34,7 +34,7 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             pathCount=pathCount+1;
             if isempty(hFinite{j,m}) %if quad point isn't also another critical point (can happen for finite paths)
                 nodeCount=nodeCount+1;
-                node(nodeCount)=struct('z',CritPointEndPoint{j}(m),'type','Q','CPindex',j,'infStart',false,'finiteEnd',false);
+                node(nodeCount)=struct('z',CritPointEndPoint{j}(m),'type','Q','CPindex',j,'infStart',false,'finiteEnd',[]);
             else 
                 nodeCount=nodeCount+1;
                 node(nodeCount)=struct('z',CritPointEndPoint{j}(m), 'type', 'Q', 'CPindex', [j FPindices{j}(m)], 'infStart',false, 'finiteEnd', hFinite{j,m}(end));
@@ -44,7 +44,7 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     end
     if binf
         nodeCount=nodeCount+1;
-        node(nodeCount)=struct('z',b*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',false);
+        node(nodeCount)=struct('z',b*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',[]);
         endNodes=nodeCount;
     end
     
@@ -113,7 +113,13 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             if length(node(path(j)).CPindex)<2
                 error('The C-Q-C combo should mean Q is a finite path... something is wrong');
             end
-            finitePathNodesUsed=[finitePathNodesUsed j];
+            %determine if finite path starts or ends at this critical
+            %point:
+            if node(path(j)).CPindex(1)==node(path(j-1)).CPindex
+                finitePathNodesUsed=[finitePathNodesUsed j];
+            else
+                finitePathNodesUsed=[finitePathNodesUsed j-1];
+            end
         end
     end
     
@@ -159,16 +165,16 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             end
         end
         if ainf
-            plot(a*R+0000000000.1i,'ro');
+            plot(a*R+0.0000000001i,'ro');
         end
         if binf
-            plot(b*R+0000000000.1i,'ro');
+            plot(b*R+0.0000000001i,'ro');
         end
         %plot([a b],[0 0], 'b', 'LineWidth',2);
         if ~isempty(R)
             t=linspace(0,2*pi,1000);
             plot(R*exp(1i*t),'r--');
-            plot(P(:,1),'ko')
+            plot(P(:,1)+0.0000000001i,'ko')
         end
     end
     

@@ -18,7 +18,7 @@ function [gStationaryPoints, gSingularities, gSPorders,gPoleOrders] = getStation
     end
     
     %scale quad points by length of rectangle:
-    Nrect=Npts*max(1,rectRad);
+    Nrect=Npts*max(1,ceil(rectRad));
     
     if isinf(a+b)
        a=0; b=0; %centre rectangle at origin, as there's no other point of reference

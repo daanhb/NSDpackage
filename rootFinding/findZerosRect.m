@@ -22,8 +22,8 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, intThresh, N
     
     height=max(imag(rectIn))-min(imag(rectIn));
     width=max(real(rectIn))-min(real(rectIn));
-    thresh2=0.00001;%max(0.001,height/2);
-    minBisectShift=2*thresh2;
+    bigThresh=25;%max(0.001,height/2);
+    minBisectShift=.1;
     
     
     %first check if zeros lie on edge of rectangle
@@ -31,7 +31,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, intThresh, N
     fullRectIn=[rectIn rectIn(1)];
     zeroOnLine=false;
     for j=1:4
-        zeroOnLine=max(zeroOnLine,isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f, thresh2 ));
+        zeroOnLine=max(zeroOnLine,isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f, df, bigThresh ));
     end
     failCount=0;
     while zeroOnLine
@@ -48,7 +48,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, intThresh, N
         %plot(fullRectIn);
         zeroOnLine=false;
         for j=1:4
-            zeroOnLine=max(zeroOnLine,isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f, thresh2 ));
+            zeroOnLine=max(zeroOnLine,isZeroOnLine( fullRectIn(j), fullRectIn(j+1), f, df, bigThresh/min(height,width) ));
         end
         failCount=failCount+1;
     end
@@ -67,7 +67,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, intThresh, N
         zeroOnLine = true; %this value keeps choosing new bisection point until bisection line doesn't land on a zero
         failCount=0;
         while zeroOnLine
-            if failCount>10
+            if failCount>100
                 error('Keep failing to find a line without any zeros');
             end
             if width>height
@@ -84,7 +84,7 @@ function [allZeros, orders] = findZerosRect( f, df, rectIn, thresh, intThresh, N
                 bisectingLine = BLcorner+bisectRatio*1i*height + [0  width];
             end
 %             
-            zeroOnLine=isZeroOnLine( bisectingLine(1), bisectingLine(2), f, thresh2 );
+            zeroOnLine=isZeroOnLine( bisectingLine(1), bisectingLine(2), f, df, bigThresh/min(height,width) );
             bisectRatio=.5 + randScale*.5*(rand-.5);% in randScale*(.25,.75)
             if abs(bisectRatio)<minBisectShift
                bisectRatio=sign(bisectRatio)*minBisectShift;

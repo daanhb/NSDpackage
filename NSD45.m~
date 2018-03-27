@@ -87,7 +87,7 @@ StandardPaths();
                    fSingularitiesObj=varargin{j+1};
                     %check for singularities in (real) interior of integration range:
                     for s=fSingularitiesObj
-                        if imag(s.position)==0
+                        if imag(s.position)==
                            if  a<s.position && s.position<b
                                interiorSingularities=[interiorSingularities s.position];
                            end
@@ -99,12 +99,12 @@ StandardPaths();
                    gSingularities=varargin{j+1};
                case 'order'
                    gSPorders=varargin{j+1};               
-%                case 'mf' %upper bound of non-oscillatory f in complex plane
-%                    Mf=varargin{j+1};
-% %                case 'ginv' %user has provided inverse of g(x)
-% % 
-% %                case 'gderinv' %user has provided inverse of g'(x)
-% %                    
+               case 'mf' %upper bound of non-oscillatory f in complex plane
+                   Mf=varargin{j+1};
+               case 'ginv' %user has provided inverse of g(x)
+
+               case 'gderinv' %user has provided inverse of g'(x)
+                   
                case 'ganalytic'
                    gAnalytic=varargin{j+1};
                case 'visuals on'

@@ -33,6 +33,9 @@ function argPri = countZerosRect( f,df, rect, intThresh, N, moments )
             end
         end
         N=N*2;
+        if N>1000
+            error('Npts to resolve integrand on rectangle edge has become stupidly big');
+        end
     end
     
 end
