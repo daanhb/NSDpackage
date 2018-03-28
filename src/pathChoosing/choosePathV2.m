@@ -82,6 +82,9 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     
     if cost>.1
         warning(sprintf('Cost of truncating SD path is %e, may not be optimal path',cost));
+        warning('Using standard quadrature instead :-(')
+        [X_,W_] = abortPathSearch(a,b,ainf,binf,freq,Npts);
+        return;
     end
     
     %check for three consecutice Q types, doesn't make sense but can happen
@@ -150,16 +153,8 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             inOut=-1;
         else
             warning('Steepest descent path not found, using standard quadrature instead :-(');
-            if ainf
-                a=a*R;
-            end
-            if binf
-                b=b*R;
-            end
-            [X_{1},W_{1}] = oscQuadExpensive(a,b,freq, Npts);
-            finalPath=1;
-            fullIndex=1;
-            break;
+            [X_,W_] = abortPathSearch(a,b,ainf,binf,freq,Npts);
+            return;
         end
         W=[W; inOut*W_{ind}];
         X=[X; X_{ind};];   

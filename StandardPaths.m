@@ -15,7 +15,7 @@ addpath pathFinding;
 addpath quadrature;
 addpath rootFinding;
 addpath singularPoints;
-addpath DaveCode
+addpath infCountours;
 
 %some of Daan's old hoipack paths get used too:
 % addpath hoipack;
