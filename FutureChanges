@@ -1,9 +1,0 @@
-Short term
-a or b complex (finite) causes errors
-
-med term:
-Fix the old-style root finder, and use it when the rectangles get too small in the new-style one
-
-Long term:
-3. Detect if integrand is/isn't oscillatory
-5. Account for g(x)=x^(1/2)~type branch cuts
