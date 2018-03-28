@@ -149,7 +149,17 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             [~,ind]=ismember(fliplr(Pval.'),P,'rows');
             inOut=-1;
         else
-            error('Row of P matrix not found');
+            warning('Steepest descent path not found, using standard quadrature instead :-(');
+            if ainf
+                a=a*R;
+            end
+            if binf
+                b=b*R;
+            end
+            [X_{1},W_{1}] = oscQuadExpensive(a,b,freq, Npts);
+            finalPath=1;
+            fullIndex=1;
+            break;
         end
         W=[W; inOut*W_{ind}];
         X=[X; X_{ind};];   
