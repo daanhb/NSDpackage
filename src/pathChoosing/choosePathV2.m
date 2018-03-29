@@ -45,12 +45,12 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
                 
                 %choose path extension radius small enough that other paths
                 %are avoided:
-                Pline=[P(:,1); P(:,2)];
-                Pline=Pline(~ismember(Pline, [criticalPoints(j) CritPointEndPoint{j}(m)]));
-                traceCircleRad=.5*min(abs(Pline-CritPointEndPoint{j}(m)));
+                Pline=[P(:,1)];%; P(:,2)];
+               % Pline=Pline(~ismember(Pline, [criticalPoints(j) CritPointEndPoint{j}(m)]));
+                %traceCircleRad=.5*min(abs(Pline-CritPointEndPoint{j}(m)));
                 
                 node(nodeCount)=struct('z',CritPointEndPoint{j}(m),'type','Q','CPindex',j,'infStart',false,'finiteEnd',[], 'tracedEnd',...
-                                crudePathTrace(G{1}, CritPointEndPoint{j}(m), traceCircleRad, traceSegmentLength, traceRad, visuals));
+                                crudePathTrace(G{1}, CritPointEndPoint{j}(m), Pline, traceSegmentLength, traceRad, visuals));
             else 
                 nodeCount=nodeCount+1;
                 node(nodeCount)=struct('z',CritPointEndPoint{j}(m), 'type', 'Q', 'CPindex', [j FPindices{j}(m)], 'infStart',false, 'finiteEnd', hFinite{j,m}(end),'tracedEnd',[]);
@@ -75,7 +75,19 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
                end
            elseif strcmp(node(j).type,'Q')
                if strcmp(node(ell).type,'Q')
-                   A(ell,j)=pathCost( node(j).z, node(ell).z, G{1}, freq, Npts);
+                   %use extended paths if that information is available:
+                   if isempty(node(j).tracedEnd)
+                       x = node(j).z;
+                   else
+                       x = node(j).tracedEnd;
+                   end
+                   if isempty(node(ell).tracedEnd)
+                       y = node(ell).z;
+                   else
+                       y = node(ell).tracedEnd;
+                   end
+                   %compute path integral between these ends
+                   A(ell,j)=max(pathCost( x, y, G{1}, freq, Npts),small);
                elseif ismember(node(ell).CPindex, node(j).CPindex) 
                    A(ell,j)=small;
                end
@@ -98,6 +110,9 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     
     if cost>.1
         warning(sprintf('Cost of truncating SD path is %e, may not be optimal path',cost));
+        warning('Trying again with a bigger radius');
+        [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices, P, G, freq, Npts, numPathsSD, visuals, X_, W_, hFinite, 2*R, ainf, binf);
+        return;
 %         warning('Using standard quadrature instead :-(')
 %         [X,W] = abortPathSearch(a,b,ainf,binf,R,freq,G{1},Npts);
 %         return;
@@ -169,6 +184,9 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             inOut=-1;
         else
             error('Steepest descent path not found:-(');
+            warning('Trying again with a bigger radius');
+            [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices, P, G, freq, Npts, numPathsSD, visuals, X_, W_, hFinite, 2*R, ainf, binf);
+            return;
 %             [X,W] = abortPathSearch(a,b,ainf,binf,R,freq,G{1},Npts);
 %             return;
         end

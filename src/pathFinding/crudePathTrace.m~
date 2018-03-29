@@ -33,9 +33,7 @@ function c = crudePathTrace(g, startPoint, avoidPoints, r2, r4, visuals)
         end
     end
     finalCircle = smallCircle(c, r2, finalN);
-    [~,minPoint] = max(imag(g(finalCircle)));
-    c = finalCircle(minPoint);
-    if visuals
-        plot(finalCircle);
-    end
+    [~,minPoint] = max(imag(g(initCircle)));
+    c = initCircle(minPoint);
+    
 end
