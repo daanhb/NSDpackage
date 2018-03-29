@@ -14,7 +14,7 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
 %totally robust.
 
 %add all of the necessary code:
-StandardPaths();
+%StandardPaths();
 
     %% ------------------------------------------------------------------%
     % -------------------------- KEY PARAMETERS ------------------------ %
@@ -32,6 +32,9 @@ StandardPaths();
         RectQuadPts = 15;
     %largest number of quad points to use
         quadMax = 50;
+        
+    %tests for nearly finite paths on or off:
+        nearlyFiniteTests=false;
         
     %flag for plotting stuff as we go
         visuals=false;
@@ -260,7 +263,12 @@ StandardPaths();
                 
                 %now check if the path we've just created is 'nearly
                 %finite'
-                [nearlyFinite, nfParamPoint, nfCritPointIndex] = nearlyFiniteCheck(P0, h{critPointIndex,branchIndex}, dhdp{critPointIndex,branchIndex}, criticalPoints(critPointIndex), criticalPoints, freq);
+                if nearlyFiniteTests
+                    [nearlyFinite, nfParamPoint, nfCritPointIndex] = nearlyFiniteCheck(P0, h{critPointIndex,branchIndex}, dhdp{critPointIndex,branchIndex}, criticalPoints(critPointIndex), criticalPoints, freq);
+                else
+                    nearlyFinite=false;
+                end
+                
                 if nearlyFinite
                     %mash this nearly finite path into a finite path.
                     % update the FPindices vector

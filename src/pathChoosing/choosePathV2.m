@@ -5,11 +5,19 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     % some silly connected paths can occur, especially when there are finite paths,
     % as an SD path can end at the beginning at another
     
+    if ~isempty(R)
+        traceRad=R;
+    else
+       traceRad=abs(b-a); 
+    end
+    
+    traceSegmentLength=.1;
+    
     nodeCount=0;
     pathCount=0;
     if ainf
         nodeCount=1;
-        node(nodeCount)=struct('z',a*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',[]);
+        node(nodeCount)=struct('z',a*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',[],'tracedEnd',[]);
         startNodes=1;
     else
         startNodes=[];
@@ -19,7 +27,7 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     %so many indices...
     for j=1:length(criticalPoints)
             nodeCount=nodeCount+1;
-            node(nodeCount)=struct('z',criticalPoints(j),'type','C','CPindex',j,'infStart',false,'finiteEnd',[]);
+            node(nodeCount)=struct('z',criticalPoints(j),'type','C','CPindex',j,'infStart',false,'finiteEnd',[],'tracedEnd',[]);
             
             if ~ainf && node(nodeCount).z==criticalPoints(1)
                 startNodes=[startNodes nodeCount];
@@ -34,17 +42,25 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             pathCount=pathCount+1;
             if isempty(hFinite{j,m}) %if quad point isn't also another critical point (can happen for finite paths)
                 nodeCount=nodeCount+1;
-                node(nodeCount)=struct('z',CritPointEndPoint{j}(m),'type','Q','CPindex',j,'infStart',false,'finiteEnd',[]);
+                
+                %choose path extension radius small enough that other paths
+                %are avoided:
+                Pline=[P(:,1); P(:,2)];
+                Pline=Pline(~ismember(Pline, [criticalPoints(j) CritPointEndPoint{j}(m)]));
+                traceCircleRad=.5*min(abs(Pline-CritPointEndPoint{j}(m)));
+                
+                node(nodeCount)=struct('z',CritPointEndPoint{j}(m),'type','Q','CPindex',j,'infStart',false,'finiteEnd',[], 'tracedEnd',...
+                                crudePathTrace(G{1}, CritPointEndPoint{j}(m), traceCircleRad, traceSegmentLength, traceRad, visuals));
             else 
                 nodeCount=nodeCount+1;
-                node(nodeCount)=struct('z',CritPointEndPoint{j}(m), 'type', 'Q', 'CPindex', [j FPindices{j}(m)], 'infStart',false, 'finiteEnd', hFinite{j,m}(end));
+                node(nodeCount)=struct('z',CritPointEndPoint{j}(m), 'type', 'Q', 'CPindex', [j FPindices{j}(m)], 'infStart',false, 'finiteEnd', hFinite{j,m}(end),'tracedEnd',[]);
             end
            
         end
     end
     if binf
         nodeCount=nodeCount+1;
-        node(nodeCount)=struct('z',b*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',[]);
+        node(nodeCount)=struct('z',b*R,'type','Q','CPindex',[],'infStart',true,'finiteEnd',[],'tracedEnd',[]);
         endNodes=nodeCount;
     end
     
@@ -82,9 +98,9 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
     
     if cost>.1
         warning(sprintf('Cost of truncating SD path is %e, may not be optimal path',cost));
-        warning('Using standard quadrature instead :-(')
-        [X_,W_] = abortPathSearch(a,b,ainf,binf,freq,Npts);
-        return;
+%         warning('Using standard quadrature instead :-(')
+%         [X,W] = abortPathSearch(a,b,ainf,binf,R,freq,G{1},Npts);
+%         return;
     end
     
     %check for three consecutice Q types, doesn't make sense but can happen
@@ -152,9 +168,9 @@ function [X, W] = choosePathV2(a,b,criticalPoints, CritPointEndPoint, FPindices,
             [~,ind]=ismember(fliplr(Pval.'),P,'rows');
             inOut=-1;
         else
-            warning('Steepest descent path not found, using standard quadrature instead :-(');
-            [X_,W_] = abortPathSearch(a,b,ainf,binf,freq,Npts);
-            return;
+            error('Steepest descent path not found:-(');
+%             [X,W] = abortPathSearch(a,b,ainf,binf,R,freq,G{1},Npts);
+%             return;
         end
         W=[W; inOut*W_{ind}];
         X=[X; X_{ind};];   

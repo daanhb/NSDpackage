@@ -1,4 +1,4 @@
-function [X_,W_] = abortPathSearch(a,b,ainf,binf,freq,Npts)
+function [X,W] = abortPathSearch(a,b,ainf,binf,R,freq,g,Npts)
 %if no path can be found, this file is called
     if ainf
         a=a*R;
@@ -6,6 +6,7 @@ function [X_,W_] = abortPathSearch(a,b,ainf,binf,freq,Npts)
     if binf
         b=b*R;
     end
-    [X_{1},W_{1}] = oscQuadExpensive(a,b,freq, Npts);
+    [X,W_] = oscQuadExpensive(a,b,freq, Npts);
+    W=W_.*exp(1i*freq*g(X));
 end
 
