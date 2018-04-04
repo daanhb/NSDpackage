@@ -2,6 +2,7 @@
 *.jpg
 *.fig
 *.mat
+*.m~
 
 HNAspecialCases_/
 
