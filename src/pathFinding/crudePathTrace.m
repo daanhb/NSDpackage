@@ -17,7 +17,7 @@ function c = crudePathTrace(g, startPoint, avoidPoints, r2, r4, visuals)
     
     while r4 > abs(c-startPoint)
         if r1<r1Max
-             r1=min(.5*min(abs(avoidPoints-c)),r1Max);
+             r1=min(min(.5*min(abs(avoidPoints-c)),r1Max));
         end
         N=max(8,ceil(2*pi*r1/r2));
         initCircle = smallCircle(c, r1, N);

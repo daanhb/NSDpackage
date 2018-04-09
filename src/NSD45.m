@@ -27,6 +27,8 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         RectTol=.001;
         %distance from an integer to be considered not an integer
         intThresh=0.0001;
+        %number of oscillations to actually be considered oscillatory:
+        minOscs = 2;
         
     %number of quadrature points used for the integrals inside of this code
         RectQuadPts = 15;
@@ -50,6 +52,8 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
         %default inf flags
         ainf=false;
         binf=false;
+        
+        width = b-a;
     
     %% ------------------------------------------------------------------%
     % -------------------- INTERPRET USER INPUT ------------------------ %
@@ -126,15 +130,25 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                    rectRad = settleRad;
                case 'ainf'
                    ainf=true;
+                   width=inf;
                case 'binf'
                    binf=true;
+                   width=inf;
                case 'gpolycoeffs'
                    polyCoeffs = varargin{j+1};
                    [G, gStationaryPoints, gSPorders] = NSDeetsFromPoly(polyCoeffs, RectTol);
+               case 'width'
+                   width = varargin{j+1};
            end
        end
     end
     
+    %% Check that function is actually oscillatory:
+    oscs = oscCount( a,b,freq,gStationaryPoints,G{1} );
+    if oscs < minOscs
+        [X, W] = NonOsc45(a,b,freq,N,G{1},fSingularitiesObj, width);
+        return;
+    end
     
     %% ------------------------------------------------------------------%
     % -------------------------- SINGULARITIES ------------------------- %
@@ -295,7 +309,9 @@ function [ X, W ] = NSD45( a,b,freq,N,G,varargin)
                 W_{fullIndex}=dhdpFinite{critPointIndex,branchIndex}.*Wfinite{critPointIndex,branchIndex}*exp(1i*freq*G{1}(criticalPoints(critPointIndex)));
                 %
             end
-            
+            if sum(isnan(X_{fullIndex}))>0
+                error('NaNs in the complex plane. Possible explanation - a hidden stationary point?');
+            end
             P(fullIndex,2)=X_{fullIndex}(end);   
             P(fullIndex,1)=criticalPoints(critPointIndex);
             CritPointToPathInds{critPointIndex}=[CritPointToPathInds{critPointIndex} fullIndex];
